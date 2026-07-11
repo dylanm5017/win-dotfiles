@@ -1,0 +1,31 @@
+#!/bin/sh
+# win-dotfiles pre-commit hook.
+#
+# Every repo config is symlinked live into the running desktop (komorebi, whkd, yasb, wezterm,
+# terminal, VS Code), so a malformed config that lands in a commit becomes the live config the
+# moment it is reloaded. This hook syntax-validates the config files before the commit is created.
+#
+# Installed by install.ps1 via `git config core.hooksPath hooks`. Bypass with `git commit --no-verify`.
+
+# Only run when the commit touches a format we validate; otherwise commit straight through.
+staged=$(git diff --cached --name-only --diff-filter=ACM)
+if ! printf '%s\n' "$staged" | grep -Eiq '\.(json|jsonc|ya?ml|toml|lua|xaml)$'; then
+    exit 0
+fi
+
+pwsh_cmd=$(command -v pwsh || command -v powershell)
+if [ -z "$pwsh_cmd" ]; then
+    echo "win-dotfiles pre-commit: PowerShell not found; skipping config validation." >&2
+    exit 0
+fi
+
+repo=$(git rev-parse --show-toplevel)
+"$pwsh_cmd" -NoLogo -NoProfile -File "$repo/powershell/Test-WinDotfiles.ps1" -ConfigOnly
+if [ "$?" -ne 0 ]; then
+    echo "" >&2
+    echo "win-dotfiles pre-commit: config validation failed (see above)." >&2
+    echo "Fix the reported files, or bypass this check with: git commit --no-verify" >&2
+    exit 1
+fi
+
+exit 0

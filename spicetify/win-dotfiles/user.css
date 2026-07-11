@@ -1,0 +1,32 @@
+/*
+ * win-dotfiles Spicetify polish — deliberately minimal.
+ *
+ * Colours come from color.ini (the --spice-* variables Spicetify generates per scheme).
+ * This file only adds shape/depth that echoes the frosted yasb + rounded komorebi look.
+ * Spotify's DOM and class names change often, so heavy CSS rots fast — keep this small.
+ */
+
+/* Rounded album art, cards, and entity headers */
+.main-image-image,
+.main-cardImage-imageWrapper,
+.main-entityHeader-imageContainer img,
+.main-trackList-rowImage {
+    border-radius: 10px;
+}
+
+/* Now-playing cover art (bottom-left) */
+.main-nowPlayingWidget-coverArt .cover-art,
+.main-coverSlotCollapsed-container img {
+    border-radius: 8px;
+}
+
+/* Frost the top bar + now-playing bar to match the glass bars */
+.main-topBar-background,
+.main-nowPlayingBar-nowPlayingBar {
+    backdrop-filter: blur(8px);
+}
+
+/* Soften card hover so it reads as a surface, not a hard rectangle */
+.main-card-card {
+    border-radius: 12px;
+}

@@ -1,0 +1,662 @@
+/*
+ * win-dotfiles Yasb stylesheet — frosted-glass status bar.
+ *
+ * Colors are NOT hand-edited below: the `:root` block between the
+ * win-dotfiles:theme markers is rewritten by the `theme` command from the active
+ * palette (themes/<name>.psd1 -> YasbPalette). Everything else references those
+ * CSS variables via var(--name), so the whole bar restyles in lock-step with the
+ * terminal, prompt, komorebi borders, and desktop accent. Yasb hot-reloads on save.
+ *
+ * The bar uses a real frosted/acrylic blur (bars.*.blur_effect in config.yaml), so the
+ * strip itself is the glass surface; widgets sit flat on it and the stats Grouper reads
+ * as one inset island. Edit layout/shape here; edit colors in the theme .psd1 files.
+ */
+
+/* win-dotfiles:theme:start */
+:root {
+    --bg: #282A36;
+    --surface: #44475A;
+    --surface-alt: #6272A4;
+    --text: #F8F8F2;
+    --subtext: #6272A4;
+    --accent: #BD93F9;
+    --accent-alt: #8BE9FD;
+    --ok: #50FA7B;
+    --warn: #F1FA8C;
+    --err: #FF5555;
+    --island: rgba(40, 42, 54, 0.80);
+    --border: rgba(189, 147, 249, 0.35);
+}
+/* win-dotfiles:theme:end */
+
+* {
+    font-family: "CaskaydiaCove NF";
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+}
+
+/* The whole bar is the frosted glass surface (blur is enabled in config). */
+.yasb-bar {
+    background-color: var(--island);
+    border-bottom: 1px solid var(--border);
+}
+
+/* Widgets sit flat on the glass — no per-widget pill. */
+.widget {
+    background-color: transparent;
+    border: none;
+    padding: 0 4px;
+    margin: 0 2px;
+}
+
+.widget .label {
+    padding: 0 8px;
+}
+
+.widget .label:hover {
+    color: var(--text);
+    background-color: var(--surface);
+    border-radius: 8px;
+}
+
+/* Pressed feedback on the label-button widgets (komorebi control, power menu). */
+.komorebi-control .label:pressed,
+.power-menu-widget .label:pressed {
+    background-color: var(--surface-alt);
+    border-radius: 8px;
+}
+
+.widget .icon {
+    padding: 0 2px;
+    font-size: 15px;
+    color: var(--subtext);
+}
+
+/* ---- Usage thresholds (cpu / memory / gpu / disk) -------------------------------------- */
+/* Yasb applies status-low|medium|high|critical to the label based on *_thresholds. */
+.label.status-low {
+    color: var(--ok);
+}
+
+.label.status-medium {
+    color: var(--text);
+}
+
+.label.status-high {
+    color: var(--warn);
+}
+
+.label.status-critical {
+    color: var(--err);
+    font-weight: 700;
+}
+
+/* ---- Komorebi workspaces -------------------------------------------------------------- */
+.komorebi-workspaces {
+    padding: 0 2px;
+}
+
+.komorebi-workspaces .ws-btn {
+    color: var(--subtext);
+    background-color: transparent;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    margin: 3px 2px;
+    padding: 0 7px;
+}
+
+.komorebi-workspaces .ws-btn:hover {
+    color: var(--text);
+    background-color: var(--surface);
+}
+
+.komorebi-workspaces .ws-btn.populated {
+    color: var(--text);
+}
+
+.komorebi-workspaces .ws-btn.active {
+    color: var(--bg);
+    background-color: var(--accent);
+    font-weight: 700;
+}
+
+/* Keep the active workspace accent-filled on hover (don't flatten to the plain hover pill). */
+.komorebi-workspaces .ws-btn.active:hover {
+    color: var(--bg);
+    background-color: var(--accent);
+}
+
+/* Brief pressed shade when clicking a workspace. */
+.komorebi-workspaces .ws-btn:pressed {
+    background-color: var(--surface-alt);
+}
+
+.komorebi-workspaces .offline-status {
+    color: var(--err);
+    padding: 0 8px;
+}
+
+/* Active layout + komorebi control. */
+.komorebi-active-layout {
+    color: var(--accent-alt);
+}
+
+.komorebi-active-layout .label {
+    font-size: 15px;
+}
+
+.komorebi-control .label {
+    color: var(--accent-alt);
+    font-size: 15px;
+}
+
+/* ---- Focused window + clocks ---------------------------------------------------------- */
+.active-window-widget .label,
+.active-window-widget .label.active {
+    color: var(--text);
+}
+
+.clock-widget .label {
+    color: var(--accent);
+    font-weight: 700;
+}
+
+/* Larger centre clock on the primary (light) bar only */
+.light-bar .clock-widget .label {
+    font-size: 18px;   /* base is 13px */
+}
+
+/* Colored, clickable widgets keep their identity hue on hover (the generic label:hover
+   flattens to --text, which drops the accent). */
+.clock-widget .label:hover,
+.theme-status .label:hover {
+    color: var(--accent);
+}
+
+/* ---- Media / now-playing -------------------------------------------------------------- */
+.media-widget .label {
+    color: var(--subtext);
+}
+
+.media-widget .btn {
+    color: var(--text);
+    padding: 0 4px;
+}
+
+.media-widget .btn:hover {
+    color: var(--accent);
+}
+
+.media-widget .btn.disabled {
+    color: var(--surface-alt);
+}
+
+/* ---- System-stats Grouper (one inset frosted island) ---------------------------------- */
+.system-grouper {
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin: 4px 4px;
+    padding: 0 2px;
+}
+
+.system-grouper .grouper-collapse-button,
+.grouper .grouper-collapse-button {
+    color: var(--subtext);
+    padding: 0 6px;
+}
+
+.cpu-widget .icon,
+.memory-widget .icon,
+.gpu-widget .icon,
+.disk-widget .icon {
+    color: var(--accent-alt);
+}
+
+.traffic-widget .label {
+    color: var(--subtext);
+}
+
+.traffic-widget .icon {
+    color: var(--accent-alt);
+}
+
+/* ---- Weather -------------------------------------------------------------------------- */
+.weather-widget .label {
+    color: var(--subtext);
+}
+
+.weather-widget .icon {
+    color: var(--accent);
+}
+
+/* ---- Update check --------------------------------------------------------------------- */
+.update-check-widget .label {
+    color: var(--subtext);
+}
+
+.update-check-widget .icon {
+    color: var(--accent-alt);
+}
+
+/* ---- Power menu (button + popup) ------------------------------------------------------ */
+.power-menu-widget .label {
+    color: var(--err);
+    font-size: 15px;
+    padding: 0 8px;
+}
+
+.power-menu-widget .label:hover {
+    color: var(--text);
+    background-color: var(--err);
+    border-radius: 8px;
+}
+
+.power-menu-popup {
+    background-color: var(--bg);
+    border: 1px solid var(--border);
+}
+
+.power-menu-popup .button {
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    margin: 8px;
+    padding: 14px;
+}
+
+.power-menu-popup .button:hover {
+    background-color: var(--accent);
+    color: var(--bg);
+}
+
+.power-menu-popup .button .icon {
+    color: var(--accent);
+    font-size: 32px;
+}
+
+.power-menu-popup .button:hover .icon {
+    color: var(--bg);
+}
+
+/* Tooltips (update-check package lists, etc.) — readable themed background */
+QToolTip {
+    background-color: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 8px;
+}
+
+/* ---- Popups (calendar, menus, graphs, cards) ------------------------------------------ */
+.calendar,
+.context-menu,
+.komorebi-control-menu,
+.traffic-menu,
+.cpu-menu,
+.memory-menu,
+.gpu-menu,
+.disk-menu,
+.disk-group,
+.media-menu,
+.audio-menu,
+.weather-card,
+.notification-popup {
+    background-color: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+
+.komorebi-control-menu .button,
+.context-menu .button {
+    color: var(--text);
+    background-color: transparent;
+    border-radius: 8px;
+    padding: 6px 10px;
+}
+
+.komorebi-control-menu .button:hover,
+.context-menu .button:hover {
+    background-color: var(--surface);
+}
+
+.komorebi-control-menu .button.start {
+    color: var(--ok);
+}
+
+/* Usage-history graphs inside the cpu/memory/gpu popups (CSS-themed, no hex in config). */
+.cpu-menu .graph,
+.memory-menu .graph,
+.gpu-menu .graph {
+    background-color: var(--surface);
+    border-radius: 8px;
+}
+
+.cpu-menu,
+.memory-menu,
+.gpu-menu,
+.disk-group,
+.audio-menu {
+    padding: 6px;
+}
+
+/* ---- Volume ---------------------------------------------------------------------------- */
+.volume-widget .label {
+    color: var(--subtext);
+}
+
+.volume-widget .icon {
+    color: var(--accent-alt);
+}
+
+.audio-menu .device,
+.audio-menu .app {
+    color: var(--text);
+    padding: 4px 8px;
+    border-radius: 8px;
+}
+
+.audio-menu .device:hover,
+.audio-menu .app:hover {
+    background-color: var(--surface);
+}
+
+.audio-menu .device.selected {
+    color: var(--accent);
+}
+
+/* ---- Notifications + Do-Not-Disturb --------------------------------------------------- */
+.notification-widget .label,
+.dnd-widget .label {
+    color: var(--subtext);
+}
+
+.notification-widget .icon {        /* DND removed — it renders {icon} as label text, no .icon child */
+    color: var(--accent-alt);
+}
+
+.notification-widget .label.new-notification {   /* was .new — never matched */
+    color: var(--accent);
+}
+
+.dnd-widget .label.status-disabled {              /* DND off — dim moon */
+    color: var(--subtext);
+}
+
+.dnd-widget .label.status-priority,
+.dnd-widget .label.status-alarms {                /* DND on — highlighted */
+    color: var(--warn);
+}
+
+/* ---- Active-theme indicator (Custom widget) ------------------------------------------- */
+.theme-status .label {
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.theme-status .icon {
+    color: var(--accent);
+}
+
+/* ---- Cava audio visualizer ------------------------------------------------------------ */
+.cava-widget {
+    padding: 0 6px;
+    color: var(--accent);
+}
+
+.cava-widget .label {
+    color: var(--accent);
+}
+
+/* ---- Media popup (album art + transport) ---------------------------------------------- */
+.media-menu {
+    min-width: 480px;          /* bigger card */
+    padding: 20px;
+}
+
+.media-menu .title {
+    color: var(--text);
+    font-weight: 700;
+    font-size: 22px;
+    margin-left: 18px;         /* separate from thumbnail (content HBox spacing is 0) */
+    padding-top: 4px;
+}
+
+.media-menu .artist {
+    color: var(--subtext);
+    font-size: 16px;
+    margin-left: 18px;
+    padding-bottom: 8px;
+}
+
+.media-menu .source {
+    color: var(--subtext);
+    font-size: 12px;
+    padding: 2px 8px;
+}
+
+.media-menu .btn {
+    color: var(--text);
+    font-size: 26px;
+    padding: 6px 12px;
+    margin-left: 16px;
+}
+
+.media-menu .btn:hover {
+    color: var(--accent);
+}
+
+.media-menu .btn.disabled {
+    color: var(--surface-alt);
+}
+
+/* Elapsed / total time */
+.media-menu .playback-time {
+    color: var(--subtext);
+    font-size: 12px;
+}
+
+/* Theme the progress slider (was an unstyled default Qt slider) */
+.media-menu .progress-slider::groove {
+    background-color: var(--surface);
+    height: 4px;
+    border-radius: 2px;
+}
+
+.media-menu .progress-slider::sub-page {
+    background-color: var(--accent);
+    border-radius: 2px;
+}
+
+.media-menu .progress-slider::handle {
+    background-color: var(--accent);
+    width: 12px;
+    height: 12px;
+    border-radius: 6px;
+    margin: -4px 0;
+}
+
+/* ---- GitHub / Claude Usage (dev widgets) ---------------------------------------------- */
+.github-widget .label,
+.claude-usage .label {
+    color: var(--subtext);
+}
+
+.github-widget .icon,
+.claude-usage .icon {
+    color: var(--accent);
+}
+
+.github-widget .label:hover {
+    color: var(--text);
+}
+
+/* Claude Usage: tint the label as the 5-hour quota burns down (widget adds low/medium/high) */
+.claude-usage .label.low    { color: var(--subtext); }
+.claude-usage .label.medium { color: var(--warn); }
+.claude-usage .label.high   { color: var(--err); }
+
+/* Notifications / usage popups — match the house popup shell */
+.github-menu,
+.claude-usage-menu {
+    background-color: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 6px;
+}
+
+.github-menu .section-header,
+.claude-usage-menu .header {
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.github-menu .contents .item {
+    color: var(--text);
+    padding: 4px 8px;
+    border-radius: 8px;
+}
+
+.github-menu .contents .item:hover {
+    background-color: var(--surface);
+}
+
+.github-menu .contents .item.new {
+    color: var(--accent);
+}
+
+/* Claude Usage quota progress bars */
+.claude-usage-menu .progress.low    { background-color: var(--ok); }
+.claude-usage-menu .progress.medium { background-color: var(--warn); }
+.claude-usage-menu .progress.high   { background-color: var(--err); }
+
+/* ======================================================================================
+   Popup readability pass
+   --------------------------------------------------------------------------------------
+   The dropdown popups (calendar, audio, media, weather, notifications, cpu/mem/gpu/disk
+   graphs, github/claude menus) read as cramped: most shells had no inner padding
+   (content pressed against the 1px border), list rows used tight 4px padding with no gaps,
+   and everything sat at the 13px bar base with no minimum width so lists wrapped.
+   These later rules override the terse ones above — roomier padding, row spacing, a
+   comfortable min-width, and a slightly larger popup type scale. All var(--*) themed.
+   ====================================================================================== */
+
+/* 1. Give every popup shell generous room + a wide, confident minimum width so they
+      read as real panels on a large display, not a thin slice pinned to the border. */
+.calendar,
+.context-menu,
+.komorebi-control-menu,
+.traffic-menu,
+.cpu-menu,
+.memory-menu,
+.gpu-menu,
+.disk-menu,
+.disk-group,
+.media-menu,
+.audio-menu,
+.weather-card,
+.notification-popup,
+.github-menu,
+.claude-usage-menu {
+    padding: 18px;
+    min-width: 360px;
+}
+
+/* 2. Bump popup text well off the dense 13px bar size so labels are easy to read.
+      Targets QLabel (not .label) so it catches every text element regardless of the
+      per-widget class names (e.g. the Claude menu's .title/.reset/.date/.percent). */
+.context-menu QLabel,
+.komorebi-control-menu QLabel,
+.traffic-menu QLabel,
+.cpu-menu QLabel,
+.memory-menu QLabel,
+.gpu-menu QLabel,
+.disk-menu QLabel,
+.disk-group QLabel,
+.media-menu QLabel,
+.audio-menu QLabel,
+.weather-card QLabel,
+.notification-popup QLabel,
+.github-menu QLabel,
+.claude-usage-menu QLabel {
+    font-size: 15px;
+}
+
+/* 3. Roomier, well-separated rows in the list-style menus (audio devices/apps,
+      github notifications, and the generic button menus). */
+.audio-menu .device,
+.audio-menu .app,
+.github-menu .contents .item,
+.context-menu .button,
+.komorebi-control-menu .button {
+    padding: 11px 16px;
+    margin: 3px 0;
+    border-radius: 10px;
+}
+
+/* 4. Section titles / headers: give them weight and a clear gap from the rows below. */
+.github-menu .section-header,
+.claude-usage-menu .header,
+.media-menu .title,
+.weather-card .label.title {
+    font-size: 17px;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+/* 5. Secondary lines (paths, dates, subtitles) stay legible but recede. */
+.github-menu .contents .item .repo,
+.media-menu .artist {
+    font-size: 13px;
+    color: var(--subtext);
+}
+
+/* 6. Calendar: loosen the day grid + give the weekday header room so dates breathe. */
+.calendar .calendar-table,
+.calendar .calendar-table .cell {
+    padding: 7px 11px;
+    font-size: 14px;
+}
+
+/* 7. Bigger usage graphs in the cpu/memory/gpu popups so the history is actually readable. */
+.cpu-menu .graph,
+.memory-menu .graph,
+.gpu-menu .graph {
+    min-width: 320px;
+    min-height: 150px;
+}
+
+/* 8. Notification cards: room to read the message, not a one-line sliver. */
+.notification-popup .notification {
+    padding: 12px 14px;
+    margin: 3px 0;
+    border-radius: 10px;
+}
+
+/* 9. Inset the text off the left wall.
+      Qt does NOT honor stylesheet padding on a popup's outer frame for its child
+      layout, so the shell padding in rule 1 widens the panel but the labels still lay
+      out flush against the left edge (the extra width lands as empty space on the right).
+      Padding IS honored on the leaf QLabel elements — and the specific row/label
+      classes vary per widget (e.g. the Claude menu uses .title/.reset/.date/.percent,
+      not .label) — so target every QLabel in the non-row popups directly. Row-based
+      menus (audio / github items / context / komorebi buttons) inset via their own row
+      padding and are excluded; only github's standalone section-header is added back. */
+.calendar QLabel,
+.traffic-menu QLabel,
+.cpu-menu QLabel,
+.memory-menu QLabel,
+.gpu-menu QLabel,
+.disk-menu QLabel,
+.disk-group QLabel,
+.media-menu QLabel,
+.weather-card QLabel,
+.notification-popup QLabel,
+.claude-usage-menu QLabel,
+.github-menu .section-header {
+    padding-left: 16px;
+    padding-right: 16px;
+}

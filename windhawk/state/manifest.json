@@ -1,0 +1,47 @@
+{
+  "exportedUtc": "2026-06-30T13:51:00.2727544Z",
+  "includeCompiled": false,
+  "modCount": 8,
+  "mods": [
+    {
+      "id": "center-titlebar",
+      "disabled": 0,
+      "version": "1.0"
+    },
+    {
+      "id": "dark-menus",
+      "disabled": 0,
+      "version": "1.4.2"
+    },
+    {
+      "id": "disable-immersive-context-menus",
+      "disabled": 0,
+      "version": "1.0.0"
+    },
+    {
+      "id": "disable-rounded-corners",
+      "disabled": 0,
+      "version": "1.0.1"
+    },
+    {
+      "id": "win11-accent-border",
+      "disabled": 0,
+      "version": "1.0.4"
+    },
+    {
+      "id": "win11-custom-title-bar-colours",
+      "disabled": 0,
+      "version": "1.0.0"
+    },
+    {
+      "id": "window-border-customizer",
+      "disabled": 0,
+      "version": "1.0.1"
+    },
+    {
+      "id": "windows-11-notification-center-styler",
+      "disabled": 0,
+      "version": "1.5"
+    }
+  ]
+}

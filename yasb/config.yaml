@@ -1,0 +1,413 @@
+# win-dotfiles Yasb (Yet Another Status Bar) config — primary status bar (replaces the
+# komorebi built-in bar). Linked to ~/.config/yasb/config.yaml by winsmooth -Apply.
+#
+# Two asymmetric bars:
+#   - light  -> primary monitor (Samsung ultrawide): ambient glance (workspaces, clock, media).
+#   - rich   -> the other monitor (ASUS 1080p detail screen): full system widgets + tray + power.
+# Yasb targets them by name-independent screen tokens: ['primary'] vs ['*'] (remaining monitor).
+#
+# Theming is NOT done here: colors live in yasb/styles.css inside a win-dotfiles:theme block
+# that the `theme` command rewrites from the active palette (themes/<name>.psd1 -> YasbPalette),
+# keeping the bar in lock-step with the terminal, prompt, komorebi borders, and desktop accent.
+#
+# Komorebi workspace/layout widgets require komorebi >= v0.18.0.
+
+watch_stylesheet: true   # hot-reload styles.css on save (so `theme` repaints live)
+watch_config: true       # hot-reload this file on save
+debug: false
+show_systray: false
+system_colors: false     # palette is driven explicitly via styles.css :root, not the OS accent
+
+komorebi:
+  start_command: "komorebic start --whkd"
+  stop_command: "komorebic stop --whkd"
+  reload_command: "komorebic reload-configuration"
+
+bars:
+  # Light, ambient bar on the primary Samsung ultrawide.
+  # Notifications live here (not the rich bar) because Windows opens the notification
+  # center on the primary screen, so the bell sits next to where the panel appears.
+  light-bar:
+    enabled: true
+    screens: ['primary']
+    class_name: "yasb-bar light-bar"
+    alignment: { position: "top", align: "center" }
+    blur_effect: { enabled: true, round_corners: true, round_corners_type: "normal" }
+    animation: { enabled: true, type: "slide", duration: 320 }
+    # No AppBar: komorebi reserves the strip via global_work_area_offset (komorebi.json),
+    # so tiled windows never sit under the bar. Two reservations would double-stack.
+    window_flags: { always_on_top: true, windows_app_bar: false }
+    dimensions: { width: "100%", height: 38 }
+    padding: { top: 6, left: 8, bottom: 0, right: 8 }
+    widgets:
+      left: ["komorebi_workspaces", "komorebi_active_layout"]
+      center: ["clock"]
+      right: ["media", "cava", "volume", "github", "claude_usage", "theme_status", "notifications", "clock_date"]
+
+  # Rich, detail bar on the smaller ASUS 1080p screen (compact labels to fit 1920px).
+  rich-bar:
+    enabled: true
+    screens: ['*']
+    class_name: "yasb-bar rich-bar"
+    alignment: { position: "top", align: "center" }
+    blur_effect: { enabled: true, round_corners: true, round_corners_type: "normal" }
+    animation: { enabled: true, type: "slide", duration: 320 }
+    # No AppBar: komorebi reserves the strip via global_work_area_offset (komorebi.json),
+    # so tiled windows never sit under the bar. Two reservations would double-stack.
+    window_flags: { always_on_top: true, windows_app_bar: false }
+    dimensions: { width: "100%", height: 38 }
+    padding: { top: 6, left: 8, bottom: 0, right: 8 }
+    widgets:
+      left: ["komorebi_workspaces", "active_window"]
+      center: ["clock"]
+      right: ["weather", "system_grouper", "update_check", "dnd", "power_menu", "clock_date"]
+
+widgets:
+  komorebi_workspaces:
+    type: "komorebi.workspaces.WorkspaceWidget"
+    options:
+      label_offline: "komorebi offline"
+      label_workspace_btn: "{index}"
+      label_workspace_active_btn: "{index}"
+      label_workspace_populated_btn: "{index}"
+      hide_empty_workspaces: true
+      hide_if_offline: false
+      app_icons:
+        enabled_populated: true
+        enabled_active: true
+        size: 14
+        max_icons: 4
+        hide_duplicates: true
+        hide_label: false
+
+  komorebi_active_layout:
+    type: "komorebi.active_layout.ActiveLayoutWidget"
+    options:
+      hide_if_offline: true
+      label: "{icon}"
+      layouts:
+        ['bsp', 'columns', 'rows', 'grid', 'scrolling', 'vertical_stack',
+         'horizontal_stack', 'ultrawide_vertical_stack', 'right_main_vertical_stack']
+      layout_icons:
+        bsp: ""
+        columns: ""
+        rows: ""
+        grid: "󰝘"
+        scrolling: ""
+        vertical_stack: ""
+        horizontal_stack: ""
+        ultrawide_vertical_stack: ""
+        right_main_vertical_stack: ""
+        monocle: ""
+        maximized: ""
+        floating: ""
+        paused: "󰾉"
+        tiling: "󰙀"
+      callbacks:
+        on_left: "next_layout"
+        on_middle: "toggle_monocle"
+        on_right: "prev_layout"
+
+  komorebi_control:
+    type: "komorebi.control.KomorebiControlWidget"
+    options:
+      label: "<span></span>"
+      komorebi_menu:
+        blur: true
+        round_corners: true
+        round_corners_type: "normal"
+        alignment: "left"
+        direction: "down"
+      callbacks:
+        on_left: "toggle_menu"
+
+  active_window:
+    type: "yasb.active_window.ActiveWindowWidget"
+    options:
+      label: "{win[title]}"
+      label_no_window: ""
+      max_length: 40
+      max_length_ellipsis: "..."
+      monitor_exclusive: true
+
+  clock:
+    type: "yasb.clock.ClockWidget"
+    options:
+      label: "{%H:%M}"
+      label_alt: "{%A, %d %B}"
+      update_interval: 1000
+      calendar:
+        blur: true
+        round_corners: true
+        alignment: "center"
+        direction: "down"
+
+  clock_date:
+    type: "yasb.clock.ClockWidget"
+    options:
+      label: "{%a %d %b}"
+      label_alt: "{%H:%M:%S}"
+      update_interval: 10000
+      calendar:
+        blur: true
+        round_corners: true
+        alignment: "right"
+        direction: "down"
+
+  media:
+    type: "yasb.media.MediaWidget"
+    options:
+      label: "{title} - {artist}"
+      label_alt: "{title}"
+      hide_empty: true
+      max_field_size:
+        label: 28
+        label_alt: 20
+      show_thumbnail: true
+      thumbnail_padding: 6
+      thumbnail_corner_radius: 6
+      controls_hide: true
+      icons:
+        prev_track: ""
+        next_track: ""
+        play: ""
+        pause: ""
+      media_menu_icons:
+        prev_track: ""
+        next_track: ""
+        play: ""
+        pause: ""
+        unmute: ""
+      scrolling_label:
+        enabled: true
+        update_interval_ms: 33
+      media_menu:
+        round_corners: true
+        round_corners_type: "normal"
+        alignment: "center"
+        thumbnail_corner_radius: 12   # round the album art (popup-specific)
+        thumbnail_size: 240
+        max_title_size: 48
+        max_artist_size: 34
+        show_source: true
+      callbacks:
+        on_left: "toggle_media_menu"
+        on_middle: "toggle_play_pause"
+        on_right: "toggle_label"
+
+  weather:
+    type: "yasb.open_meteo.OpenMeteoWidget"
+    options:
+      # Keyless Open-Meteo. Set your location once via the weather-card search on first open.
+      units: "imperial"   # °F / mph
+      label: "<span>{icon}</span> {temp}"
+      label_alt: "{location}: min {min_temp} max {max_temp}, humidity {humidity}"
+      hide_decimal: true
+      update_interval: 1800
+      callbacks:
+        on_left: "toggle_card"
+        on_right: "toggle_label"
+
+  # System stats grouped into one frosted, collapsible island.
+  system_grouper:
+    type: "yasb.grouper.GrouperWidget"
+    options:
+      class_name: "system-grouper"
+      widgets: ["cpu", "memory", "gpu", "disk", "traffic"]
+      hide_empty: false
+      collapse_options:
+        enabled: true
+        label_position: "right"
+
+  cpu:
+    type: "yasb.cpu.CpuWidget"
+    options:
+      label: " {info[percent][total]}%"
+      label_alt: " {info[freq][current]} MHz"
+      update_interval: 2000
+      cpu_thresholds: { low: 25, medium: 60, high: 85 }
+      callbacks:
+        on_left: "toggle_label"
+        on_right: "toggle_menu"
+      menu: { enabled: true, show_graph: true, show_graph_grid: true, graph_history_size: 60 }
+
+  memory:
+    type: "yasb.memory.MemoryWidget"
+    options:
+      label: " {virtual_mem_percent}%"
+      label_alt: " {virtual_mem_free}/{virtual_mem_total}"
+      update_interval: 5000
+      memory_thresholds: { low: 25, medium: 60, high: 85 }
+      callbacks:
+        on_left: "toggle_label"
+        on_right: "toggle_menu"
+      menu: { enabled: true, show_graph: true, show_graph_grid: true, graph_history_size: 60 }
+
+  gpu:
+    type: "yasb.gpu.GpuWidget"
+    options:
+      label: "<span></span> {info[utilization]}%"
+      label_alt: "<span></span> {info[temp]}°C {info[power_draw]}W"
+      update_interval: 2000
+      hide_decimal: true
+      callbacks:
+        on_left: "toggle_label"
+        on_right: "toggle_menu"
+      menu: { enabled: true, show_graph: true, show_graph_grid: true, graph_history_size: 60 }
+
+  disk:
+    type: "yasb.disk.DiskWidget"
+    options:
+      label: "<span></span> {space[used][percent]}"
+      label_alt: "<span></span> {space[used][gb]} / {space[total][gb]}"
+      volume_label: "C"
+      update_interval: 60
+      disk_thresholds: { low: 25, medium: 60, high: 85 }
+      group_label: { round_corners_type: "normal" }
+      callbacks:
+        on_left: "toggle_group"
+        on_middle: "toggle_label"
+        on_right: "exec explorer C:\\"
+
+  traffic:
+    type: "yasb.traffic.TrafficWidget"
+    options:
+      label: "  {download_speed}  {upload_speed}"
+      label_alt: " {download_speed}  {upload_speed}"
+      update_interval: 1000
+      hide_decimal: true
+      callbacks:
+        on_left: "toggle_menu"
+
+  update_check:
+    type: "yasb.update_check.UpdateCheckWidget"
+    options:
+      winget_update:
+        enabled: true
+        interval: 60                 # re-check hourly (default is 240) so it refreshes
+        exclude: ["Microsoft.Edge"]
+        label: "<span></span> {count}"
+      scoop_update:
+        enabled: true
+        interval: 60                 # match winget
+        label: "<span>󰔮</span> {count}"
+      windows_update:
+        enabled: false
+
+  volume:
+    type: "yasb.volume.VolumeWidget"
+    options:
+      label: "<span>{icon}</span> {level}"
+      audio_menu:
+        round_corners: true
+        round_corners_type: "normal"
+        show_apps: true
+        show_app_icons: true
+      callbacks:
+        on_left: "toggle_volume_menu"
+        on_right: "toggle_mute"
+
+  notifications:
+    type: "yasb.notifications.NotificationsWidget"
+    options:
+      label: "<span></span> {count}"
+      callbacks:
+        on_left: "toggle_notification"
+        on_middle: "toggle_label"
+        on_right: "do_nothing"
+
+  dnd:
+    type: "yasb.dnd.DndWidget"
+    options:
+      label: "{icon}"
+      label_alt: "{icon} {status}"
+      icons:
+        disabled: "󰖔"   # off — crescent moon (quiet hours available), shown dim
+        priority: ""    # on, priority only — filled moon
+        alarms: ""      # on, alarms only — bell-slash (notifications silenced)
+      callbacks:
+        on_left: "toggle_status"
+        on_right: "cycle_status"
+
+  # On-brand: reads the win-dotfiles active theme slug (themes/active.txt). Updates within ~5s of
+  # a `theme` switch. NOTE: hard-codes the repo path; change it if the repo moves.
+  theme_status:
+    type: "yasb.custom.CustomWidget"
+    options:
+      class_name: "theme-status"
+      label: "<span></span> {data}"
+      exec_options:
+        run_cmd: 'cmd /c type C:\Workspace\Projects\win-dotfiles\themes\active.txt'
+        return_format: "string"
+        run_interval: 5000
+        use_shell: false
+
+  cava:
+    type: "yasb.cava.CavaWidget"
+    options:
+      class_name: "cava-widget"
+      bar_type: "bars"
+      orientation: "bottom"
+      sleep_timer: 5
+      hide_empty: true
+      callbacks:
+        on_right: "reload_cava"
+
+  # ---- Dev widgets (light-bar): GitHub notifications, Claude Code quota ----
+  # Icon-only labels to stay compact on the ambient bar; right-click toggles the verbose alt.
+  # (A VS Code recents widget was tried but removed: YASB queries the legacy
+  #  history.recentlyOpenedPathsList key, which current VS Code no longer writes.)
+  github:
+    type: "yasb.github.GithubWidget"
+    options:
+      label: "<span></span> {data}"               # {data} = unread notification count
+      label_alt: "<span></span> Notifications {data}"
+      token: ""                                          # OAuth browser sign-in on first run
+      max_notification: 20
+      only_unread: false
+      notification_dot:
+        enabled: true
+        corner: "bottom_right"
+        color: "red"
+        margin: [1, 1]
+      update_interval: 300                               # seconds
+      menu:
+        blur: true
+        round_corners: true
+        round_corners_type: "normal"
+        border_color: "System"
+        alignment: "right"
+        direction: "down"
+        offset_top: 6
+
+  claude_usage:
+    type: "yasb.claude_usage.ClaudeUsageWidget"
+    options:
+      label: "<span>󰉹</span> {five_hour}%"          # 5-hour window utilization
+      label_alt: "<span>󰉹</span> 7d {seven_day}%"   # 7-day window utilization
+      update_interval: 60                                # seconds (schema range 30-3600)
+      cache_ttl: 120
+      menu:
+        blur: true
+        round_corners: true
+        round_corners_type: "normal"
+        border_color: "System"
+        alignment: "right"
+        direction: "down"
+        offset_top: 6
+      callbacks:
+        on_left: "toggle_menu"
+        on_right: "toggle_label"
+
+  power_menu:
+    type: "yasb.power_menu.PowerMenuWidget"
+    options:
+      label: ""
+      menu_style: "popup"
+      buttons:
+        lock: ["", "Lock"]
+        sleep: ["2", "Sleep"]
+        signout: ["󰍃", "Sign out"]
+        restart: ["", "Restart"]
+        shutdown: ["", "Shut Down"]
+        cancel: ["󰜺", "Cancel"]

@@ -1,0 +1,32 @@
+{
+    "buckets": [
+        {
+            "Name": "main",
+            "Source": "https://github.com/ScoopInstaller/Main.git"
+        },
+        {
+            "Name": "extras",
+            "Source": "https://github.com/ScoopInstaller/Extras"
+        },
+        {
+            "Name": "nerd-fonts",
+            "Source": "https://github.com/matthewjberger/scoop-nerd-fonts"
+        }
+    ],
+    "apps": [
+        { "Name": "bat", "Source": "main" },
+        { "Name": "eza", "Source": "main" },
+        { "Name": "fastfetch", "Source": "main" },
+        { "Name": "fd", "Source": "main" },
+        { "Name": "fzf", "Source": "main" },
+        { "Name": "ripgrep", "Source": "main" },
+        { "Name": "starship", "Source": "main" },
+        { "Name": "zoxide", "Source": "main" },
+        { "Name": "komorebi", "Source": "extras" },
+        { "Name": "whkd", "Source": "extras" },
+        { "Name": "everything-powertoys", "Source": "extras" },
+        { "Name": "wezterm", "Source": "extras" },
+        { "Name": "spicetify-cli", "Source": "extras" },
+        { "Name": "CascadiaCode-NF", "Source": "nerd-fonts" }
+    ]
+}

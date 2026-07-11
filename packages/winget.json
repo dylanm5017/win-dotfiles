@@ -1,0 +1,42 @@
+{
+    "$schema": "https://aka.ms/winget-packages.schema.2.0.json",
+    "Sources": [
+        {
+            "SourceDetails": {
+                "Argument": "https://cdn.winget.microsoft.com/cache",
+                "Identifier": "Microsoft.Winget.Source_8wekyb3d8bbwe",
+                "Name": "winget",
+                "Type": "Microsoft.PreIndexed.Package"
+            },
+            "Packages": [
+                { "PackageIdentifier": "Microsoft.PowerShell" },
+                { "PackageIdentifier": "Microsoft.WindowsTerminal" },
+                { "PackageIdentifier": "Microsoft.PowerToys" },
+                { "PackageIdentifier": "Microsoft.VisualStudioCode" },
+                { "PackageIdentifier": "Git.Git" },
+                { "PackageIdentifier": "GitHub.cli" },
+                { "PackageIdentifier": "CoreyButler.NVMforWindows" },
+                { "PackageIdentifier": "OpenJS.NodeJS.LTS" },
+                { "PackageIdentifier": "Microsoft.DotNet.SDK.8" },
+                { "PackageIdentifier": "Microsoft.DotNet.SDK.9" },
+                { "PackageIdentifier": "Rustlang.Rustup" },
+                { "PackageIdentifier": "GoLang.Go" },
+                { "PackageIdentifier": "Python.Python.3.12" },
+                { "PackageIdentifier": "Amazon.AWSCLI" },
+                { "PackageIdentifier": "Google.FirebaseCLI" },
+                { "PackageIdentifier": "Stripe.StripeCli" },
+                { "PackageIdentifier": "Docker.DockerDesktop" },
+                { "PackageIdentifier": "FiloSottile.mkcert" },
+                { "PackageIdentifier": "QL-Win.QuickLook" },
+                { "PackageIdentifier": "Ditto.Ditto" },
+                { "PackageIdentifier": "File-New-Project.EarTrumpet" },
+                { "PackageIdentifier": "JanDeDobbeleer.OhMyPosh" },
+                { "PackageIdentifier": "AmN.yasb" },
+                { "PackageIdentifier": "karlstav.cava" },
+                { "PackageIdentifier": "Flow-Launcher.Flow.Launcher" },
+                { "PackageIdentifier": "RamenSoftware.Windhawk" },
+                { "PackageIdentifier": "Nilesoft.Shell" }
+            ]
+        }
+    ]
+}

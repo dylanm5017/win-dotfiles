@@ -1,0 +1,23 @@
+name: validate
+
+# Syntax-gate the committed configs and PowerShell scripts. These files are symlinked live on a
+# workstation, so this is the safety net that keeps a broken config from ever reaching main.
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install YAML parser
+        shell: pwsh
+        # Lets Test-WinDotfilesConfig actually validate yasb/config.yaml (skipped when absent).
+        run: Install-Module powershell-yaml -Force -Scope CurrentUser -AllowClobber
+
+      - name: Validate configs and PowerShell parse
+        shell: pwsh
+        run: ./powershell/Test-WinDotfiles.ps1 -ConfigOnly

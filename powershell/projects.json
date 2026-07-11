@@ -1,0 +1,19 @@
+{
+  "groups": [
+    {
+      "name": "Playground",
+      "command": "play",
+      "path": "Playground"
+    },
+    {
+      "name": "Sandbox",
+      "command": "sbx",
+      "path": "Sandbox"
+    },
+    {
+      "name": "Clients",
+      "command": "clients",
+      "path": "Clients"
+    }
+  ]
+}

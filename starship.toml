@@ -1,0 +1,76 @@
+# win-dotfiles Starship prompt.
+# Two-line, Nerd Font (CaskaydiaCove NF) prompt with per-theme palettes. The `theme` command
+# flips the active `palette` line below to recolor the prompt in lock-step with the terminal,
+# window manager, and desktop. Starship reads this file directly via $env:STARSHIP_CONFIG.
+add_newline = true
+command_timeout = 500
+scan_timeout = 10
+
+# Active palette — rewritten by `theme set <name>` (themes/<name>.psd1 StarshipPalette).
+palette = "dracula"
+
+# Core modules reference the active palette's roles, so flipping `palette` above recolors the
+# prompt in lock-step with the rest of the theme. Keep the default starship layout; only restyle.
+[directory]
+style = "bold path"
+
+[git_branch]
+style = "bold branch"
+
+[git_status]
+style = "bold err"
+
+[character]
+success_symbol = "[❯](bold ok)"
+error_symbol = "[❯](bold err)"
+vimcmd_symbol = "[❮](bold ok)"
+
+# Per-theme palettes. Each defines the four roles the modules above consume; `theme <name>`
+# selects one by rewriting the `palette` line. Colors come from each scheme in themes/<name>.psd1.
+[palettes.mocha]   # Catppuccin Mocha
+path = "#89b4fa"   # blue
+branch = "#cba6f7" # mauve
+ok = "#a6e3a1"     # green
+err = "#f38ba8"    # red
+
+[palettes.latte]   # Catppuccin Latte (light)
+path = "#1e66f5"   # blue
+branch = "#8839ef" # mauve
+ok = "#40a02b"     # green
+err = "#d20f39"    # red
+
+[palettes.ashes]   # Base16 Ashes (muted)
+path = "#95aec7"   # base0C
+branch = "#ae95c7" # base0D
+ok = "#95c7ae"     # base0B
+err = "#c7ae95"    # base08
+
+[palettes.dracula]
+path = "#8be9fd"   # cyan
+branch = "#bd93f9" # purple
+ok = "#50fa7b"     # green
+err = "#ff5555"    # red
+
+[palettes.nord]
+path = "#81a1c1"   # nord9
+branch = "#b48ead" # nord15
+ok = "#a3be8c"     # nord14
+err = "#bf616a"    # nord11
+
+[palettes.gruvbox]
+path = "#83a598"   # blue
+branch = "#d3869b" # purple
+ok = "#b8bb26"     # green
+err = "#fb4934"    # red
+
+[palettes.gruvbox-material]
+path = "#89b482"   # aqua
+branch = "#ddc7a1" # cream accent
+ok = "#a9b665"     # green
+err = "#ea6962"    # red
+
+[palettes.rosepine]
+path = "#c4a7e7"   # iris
+branch = "#ebbcba" # rose
+ok = "#9ccfd8"     # foam
+err = "#eb6f92"    # love

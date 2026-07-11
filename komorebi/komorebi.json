@@ -1,0 +1,319 @@
+{
+  "$schema": "https://raw.githubusercontent.com/LGUG2Z/komorebi/v0.1.41/schema.json",
+  "app_specific_configuration_path": "$Env:USERPROFILE/applications.json",
+  "global_work_area_offset": { "left": 0, "top": 42, "right": 0, "bottom": 42 },
+  "display_index_preferences": {
+    "0": "H1AK500000",
+    "1": "#ASPABZYDGXnd"
+  },
+  "float_rule_placement": "Center",
+  "floating_applications": [
+    {
+      "kind": "Class",
+      "id": "#32770",
+      "matching_strategy": "Legacy"
+    },
+    {
+      "kind": "Class",
+      "id": "MozillaDialogClass",
+      "matching_strategy": "Equals"
+    },
+    {
+      "kind": "Exe",
+      "id": "CredentialUIBroker.exe",
+      "matching_strategy": "Equals"
+    },
+    {
+      "kind": "Exe",
+      "id": "UserAccountControlSettings.exe",
+      "matching_strategy": "Equals"
+    },
+    {
+      "kind": "Exe",
+      "id": "SnippingTool.exe",
+      "matching_strategy": "Equals"
+    },
+    {
+      "kind": "Exe",
+      "id": "PowerToys.ColorPickerUI.exe",
+      "matching_strategy": "Equals"
+    },
+    {
+      "kind": "Exe",
+      "id": "PowerToys.FileLocksmithUI.exe",
+      "matching_strategy": "Equals"
+    },
+    {
+      "kind": "Exe",
+      "id": "PowerToys.PowerOCR.exe",
+      "matching_strategy": "Equals"
+    },
+    {
+      "kind": "Title",
+      "id": "Meeting in ",
+      "matching_strategy": "StartsWith"
+    }
+  ],
+  "ignore_rules": [
+    {
+      "kind": "Class",
+      "id": "MSCTFIME UI",
+      "matching_strategy": "Equals"
+    },
+    {
+      "kind": "Class",
+      "id": "Chrome_RenderWidgetHostHWND",
+      "matching_strategy": "Legacy"
+    },
+    {
+      "kind": "Class",
+      "id": "MozillaTaskbarPreviewClass",
+      "matching_strategy": "Legacy"
+    },
+    {
+      "kind": "Class",
+      "id": "Chrome_WidgetWin_2",
+      "matching_strategy": "Equals"
+    },
+    {
+      "kind": "Title",
+      "id": "Picture-in-Picture",
+      "matching_strategy": "Equals"
+    },
+    {
+      "kind": "Title",
+      "id": "Arc picture in picture",
+      "matching_strategy": "Equals"
+    },
+    {
+      "kind": "Title",
+      "id": "Microsoft Teams Notification",
+      "matching_strategy": "Legacy"
+    },
+    {
+      "kind": "Title",
+      "id": "Microsoft Teams Call",
+      "matching_strategy": "Legacy"
+    },
+    {
+      "kind": "Title",
+      "id": "Meeting Controls",
+      "matching_strategy": "EndsWith"
+    },
+    {
+      "kind": "Exe",
+      "id": "PowerToys.PowerLauncher.exe",
+      "matching_strategy": "Equals"
+    },
+    {
+      "kind": "Exe",
+      "id": "Microsoft.CmdPal.UI.exe",
+      "matching_strategy": "Equals"
+    }
+  ],
+  "layered_applications": [
+    {
+      "kind": "Exe",
+      "id": "firefox.exe",
+      "matching_strategy": "Equals"
+    },
+    {
+      "kind": "Exe",
+      "id": "WindowsTerminal.exe",
+      "matching_strategy": "Equals"
+    }
+  ],
+  "window_hiding_behaviour": "Cloak",
+  "cross_monitor_move_behaviour": "Insert",
+  "mouse_follows_focus": false,
+  "slow_application_compensation_time": 50,
+  "slow_application_identifiers": [
+    {
+      "kind": "Exe",
+      "id": "Discord.exe",
+      "matching_strategy": "Equals"
+    },
+    {
+      "kind": "Exe",
+      "id": "DiscordCanary.exe",
+      "matching_strategy": "Equals"
+    },
+    {
+      "kind": "Exe",
+      "id": "DiscordPTB.exe",
+      "matching_strategy": "Equals"
+    },
+    {
+      "kind": "Exe",
+      "id": "ms-teams.exe",
+      "matching_strategy": "Equals"
+    }
+  ],
+  "default_workspace_padding": 8,
+  "default_container_padding": 6,
+  "resize_delta": 30,
+  "animation": {
+    "enabled": {
+      "movement": true,
+      "transparency": false
+    },
+    "duration": {
+      "movement": 220,
+      "transparency": 120
+    },
+    "fps": 120,
+    "style": {
+      "movement": "EaseInOutCubic",
+      "transparency": "EaseOutSine"
+    }
+  },
+  "transparency": false,
+  "transparency_alpha": 220,
+  "border": true,
+  "border_width": 3,
+  "border_offset": -1,
+  "border_style": "Rounded",
+  "theme": {
+    "palette": "Base16",
+    "name": "Dracula",
+    "unfocused_border": "Base03",
+    "bar_accent": "Base0E"
+  },
+  "stackbar": {
+    "mode": "OnStack",
+    "label": "Title",
+    "height": 22,
+    "tabs": {
+      "width": 220,
+      "font_size": 11
+    }
+  },
+  "monitors": [
+    {
+      "workspaces": [
+        {
+          "name": "DEV",
+          "layout": "UltrawideVerticalStack",
+          "window_container_behaviour_rules": {
+            "4": "Append"
+          },
+          "initial_workspace_rules": [
+            {
+              "kind": "Exe",
+              "id": "WindowsTerminal.exe",
+              "matching_strategy": "Equals"
+            },
+            {
+              "kind": "Exe",
+              "id": "Codex.exe",
+              "matching_strategy": "Equals"
+            },
+            {
+              "kind": "Exe",
+              "id": "Code.exe",
+              "matching_strategy": "Equals"
+            },
+            {
+              "kind": "Exe",
+              "id": "firefox.exe",
+              "matching_strategy": "Equals"
+            }
+          ]
+        },
+        {
+          "name": "CODE",
+          "layout": "UltrawideVerticalStack",
+          "layout_rules": {
+            "3": "UltrawideVerticalStack"
+          },
+          "window_container_behaviour_rules": {
+            "4": "Append"
+          }
+        },
+        {
+          "name": "DEBUG",
+          "layout": "VerticalStack",
+          "layout_rules": {
+            "4": "Grid"
+          },
+          "window_container_behaviour_rules": {
+            "5": "Append"
+          }
+        },
+        {
+          "name": "BROWSER",
+          "layout": "Columns",
+          "layout_rules": {
+            "4": "Grid"
+          },
+          "window_container_behaviour_rules": {
+            "5": "Append"
+          }
+        },
+        {
+          "name": "MISC",
+          "layout": "Grid",
+          "window_container_behaviour_rules": {
+            "7": "Append"
+          }
+        }
+      ]
+    },
+    {
+      "workspaces": [
+        {
+          "name": "COMMS",
+          "layout": "VerticalStack",
+          "window_container_behaviour_rules": {
+            "1": "Append"
+          },
+          "initial_workspace_rules": [
+            {
+              "kind": "Exe",
+              "id": "slack.exe",
+              "matching_strategy": "Equals"
+            },
+            {
+              "kind": "Exe",
+              "id": "Discord.exe",
+              "matching_strategy": "Equals"
+            },
+            {
+              "kind": "Exe",
+              "id": "DiscordCanary.exe",
+              "matching_strategy": "Equals"
+            },
+            {
+              "kind": "Exe",
+              "id": "DiscordPTB.exe",
+              "matching_strategy": "Equals"
+            },
+            {
+              "kind": "Exe",
+              "id": "ms-teams.exe",
+              "matching_strategy": "Equals"
+            }
+          ]
+        },
+        {
+          "name": "MEDIA",
+          "layout": "HorizontalStack",
+          "workspace_rules": [
+            {
+              "kind": "Exe",
+              "id": "Spotify.exe",
+              "matching_strategy": "Equals"
+            }
+          ]
+        },
+        {
+          "name": "EXTRA",
+          "layout": "VerticalStack",
+          "window_container_behaviour_rules": {
+            "4": "Append"
+          }
+        }
+      ]
+    }
+  ]
+}
