@@ -330,7 +330,8 @@ widgets:
         on_right: "cycle_status"
 
   # On-brand: reads the win-dotfiles active theme slug (themes/active.txt). Updates within ~5s of
-  # a `theme` switch. NOTE: hard-codes the repo path; change it if the repo moves.
+  # a `theme` switch. Left-click opens a palette-styled theme picker (tools/Show-ThemePicker.ps1)
+  # that applies the chosen theme live. NOTE: hard-codes the repo path; change it if the repo moves.
   theme_status:
     type: "yasb.custom.CustomWidget"
     options:
@@ -341,6 +342,9 @@ widgets:
         return_format: "string"
         run_interval: 5000
         use_shell: false
+      callbacks:
+        # Launched via wscript (GUI host) so pwsh starts with no console window flash.
+        on_left: "exec wscript C:\\Workspace\\Projects\\win-dotfiles\\tools\\Show-ThemePicker.vbs"
 
   cava:
     type: "yasb.cava.CavaWidget"

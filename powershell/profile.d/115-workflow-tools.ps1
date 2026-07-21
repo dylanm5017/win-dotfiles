@@ -113,7 +113,7 @@ function Get-PackageScripts {
 function Select-NpmScript {
     param([Parameter(Mandatory)][object[]]$Scripts)
 
-    if (Get-Command fzf -ErrorAction SilentlyContinue) {
+    if (Test-Command fzf -Application) {
         $fzfArgs = New-FzfArgs `
             -Prompt 'npm run> ' `
             -Label 'npm scripts' `
@@ -132,18 +132,9 @@ function Select-NpmScript {
         return $null
     }
 
-    $index = 1
-    $Scripts | ForEach-Object {
-        Write-Host ("{0,2}. {1}  {2}" -f $index, $_.Name, $_.Command)
-        $index++
-    }
-
-    $choice = Read-Host 'npm script'
-    if ([int]::TryParse($choice, [ref]$index) -and $index -ge 1 -and $index -le $Scripts.Count) {
-        return $Scripts[$index - 1].Name
-    }
-
-    $choice
+    Select-FromNumberedMenu -Items $Scripts -Prompt 'npm script' -PassThruText `
+        -DisplayScript { param($script) '{0}  {1}' -f $script.Name, $script.Command } `
+        -ValueScript { param($script) $script.Name }
 }
 
 function Invoke-NpmScript {
@@ -156,7 +147,7 @@ function Invoke-NpmScript {
         [string[]]$ScriptArgs
     )
 
-    if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
+    if (-not (Test-Command npm -Application)) {
         Write-Warning 'npm is not installed or not on PATH.'
         return
     }
@@ -341,7 +332,7 @@ function Get-GitLockScanRoots {
         $roots.Add($currentRoot)
     }
 
-    if ($All -and (Get-Command Get-KnownProjectDirectories -ErrorAction SilentlyContinue)) {
+    if ($All -and (Test-Command Get-KnownProjectDirectories)) {
         foreach ($projectDirectory in @(Get-KnownProjectDirectories)) {
             $projectRoot = Get-GitRepositoryRoot -Path $projectDirectory.FullName
             if ($projectRoot) {
@@ -617,7 +608,7 @@ function Invoke-ProjectVerify {
         $solutionPath = Find-UpwardChildFile -Filter '*.csproj'
     }
 
-    if ($solutionPath -and (Get-Command dotnet -ErrorAction SilentlyContinue)) {
+    if ($solutionPath -and (Test-Command dotnet -Application)) {
         $dotnetCommand = if ($Mode -eq 'build') { 'build' } else { 'test' }
         dotnet $dotnetCommand $solutionPath
         return
@@ -632,7 +623,7 @@ function Set-WinDotfilesGitDefaults {
     [CmdletBinding()]
     param()
 
-    if (-not (Get-Command git -CommandType Application -ErrorAction SilentlyContinue)) {
+    if (-not (Test-Command git -Application)) {
         Write-Warning 'git is not installed or not on PATH.'
         return
     }
@@ -662,16 +653,16 @@ Set-Alias -Name gitdefaults -Value Set-WinDotfilesGitDefaults
 function Show-AwsCommandContext {
     param([Parameter(Mandatory)][string]$Service)
 
-    $profile = if ($env:AWS_PROFILE) { $env:AWS_PROFILE } else { 'default' }
+    $awsProfile = if ($env:AWS_PROFILE) { $env:AWS_PROFILE } else { 'default' }
     $region = if ($env:AWS_REGION) { $env:AWS_REGION } elseif ($env:AWS_DEFAULT_REGION) { $env:AWS_DEFAULT_REGION } else { 'default' }
-    Write-Host ("AWS {0}: profile={1}, region={2}" -f $Service, $profile, $region) -ForegroundColor Cyan
+    Write-Host ("AWS {0}: profile={1}, region={2}" -f $Service, $awsProfile, $region) -ForegroundColor Cyan
 }
 
 function awslambda {
     [CmdletBinding()]
     param([Parameter(ValueFromRemainingArguments)][string[]]$AwsArgs)
 
-    if (-not (Get-Command aws -ErrorAction SilentlyContinue)) {
+    if (-not (Test-Command aws -Application)) {
         Write-Warning 'aws is not installed or not on PATH.'
         return
     }
@@ -689,7 +680,7 @@ function awslogs {
     [CmdletBinding()]
     param([Parameter(ValueFromRemainingArguments)][string[]]$AwsArgs)
 
-    if (-not (Get-Command aws -ErrorAction SilentlyContinue)) {
+    if (-not (Test-Command aws -Application)) {
         Write-Warning 'aws is not installed or not on PATH.'
         return
     }
@@ -731,7 +722,7 @@ function fbdeploy {
         [Parameter(ValueFromRemainingArguments)][string[]]$FirebaseArgs
     )
 
-    if (-not (Get-Command firebase -ErrorAction SilentlyContinue)) {
+    if (-not (Test-Command firebase -Application)) {
         Write-Warning 'firebase is not installed or not on PATH.'
         return
     }
@@ -763,7 +754,7 @@ function fbemu {
     [CmdletBinding()]
     param([Parameter(ValueFromRemainingArguments)][string[]]$FirebaseArgs)
 
-    if (-not (Get-Command firebase -ErrorAction SilentlyContinue)) {
+    if (-not (Test-Command firebase -Application)) {
         Write-Warning 'firebase is not installed or not on PATH.'
         return
     }
@@ -776,7 +767,7 @@ function stripelisten {
     [CmdletBinding()]
     param([Parameter(ValueFromRemainingArguments)][string[]]$StripeArgs)
 
-    if (-not (Get-Command stripe -ErrorAction SilentlyContinue)) {
+    if (-not (Test-Command stripe -Application)) {
         Write-Warning 'stripe is not installed or not on PATH.'
         return
     }
@@ -795,7 +786,7 @@ function stripetrigger {
         [string[]]$StripeArgs
     )
 
-    if (-not (Get-Command stripe -ErrorAction SilentlyContinue)) {
+    if (-not (Test-Command stripe -Application)) {
         Write-Warning 'stripe is not installed or not on PATH.'
         return
     }
@@ -862,7 +853,7 @@ function Invoke-HistoryDoctor {
     }
 
     $groups |
-    Where-Object { -not (Get-Command $_.Name -ErrorAction SilentlyContinue) } |
+    Where-Object { -not (Test-Command $_.Name) } |
     Select-Object -First $Top Count, Name
 }
 
@@ -961,7 +952,7 @@ function Get-WinDotfilesCommandCatalog {
         New-WinDotfilesCommandInfo 'Dev Utilities' 'repostat' 'Show branch and dirty status for child Git repos.' 'repostat'
         New-WinDotfilesCommandInfo 'Dev Utilities' 'foreachrepo' 'Run a command in each child Git repo.' 'foreachrepo "git status"'
         New-WinDotfilesCommandInfo 'Dev Utilities' 'note' 'Append a quick timestamped note to ~/notes.txt.' 'note "remember this"'
-        New-WinDotfilesCommandInfo 'Dev Utilities' 'pkglist' 'Write Scoop package list to pkglist.txt.' 'pkglist'
+        New-WinDotfilesCommandInfo 'Dev Utilities' 'pkglist' 'Regenerate packages/scoop.json from the installed Scoop apps.' 'pkglist'
         New-WinDotfilesCommandInfo 'Dev Utilities' 'td' 'Calculate one or more time ranges.' 'td 9:15-10:45 11-12:30'
 
         New-WinDotfilesCommandInfo 'Cloud' 'awslambda' 'Run aws lambda commands after showing profile/region.' 'awslambda list-functions'
@@ -978,9 +969,6 @@ function Get-WinDotfilesCommandCatalog {
         New-WinDotfilesCommandInfo 'SQL' 'startbrowser' 'Start SQL Browser as admin.' 'startbrowser'
         New-WinDotfilesCommandInfo 'SQL' 'stopbrowser' 'Stop SQL Browser as admin.' 'stopbrowser'
         New-WinDotfilesCommandInfo 'SQL' 'getSQL' 'List local SQL services.' 'getSQL'
-
-        New-WinDotfilesCommandInfo 'Playwright' 'pwgen' 'Run Playwright codegen with the local auth file.' 'pwgen https://localhost:7095'
-        New-WinDotfilesCommandInfo 'Playwright' 'pwtest' 'Run a named Playwright .NET test filter.' 'pwtest SomeTest -headless'
 
         New-WinDotfilesCommandInfo 'Shell Aliases' 'ls' 'List directory contents with eza fallback.' 'ls'
         New-WinDotfilesCommandInfo 'Shell Aliases' 'll' 'Detailed directory listing with git info when eza exists.' 'll'
@@ -1086,7 +1074,7 @@ function Select-ProjectPathFromDirectories {
         return $orderedDirectories[0].FullName
     }
 
-    if (Get-Command fzf -ErrorAction SilentlyContinue) {
+    if (Test-Command fzf -Application) {
         $fzfArgs = New-FzfArgs -Prompt 'workon> ' -Label 'workon' -Preview (Get-FzfDirectoryPreviewCommand)
         $selected = $orderedDirectories |
         ForEach-Object FullName |
@@ -1095,18 +1083,9 @@ function Select-ProjectPathFromDirectories {
         return $selected
     }
 
-    $index = 1
-    $orderedDirectories | ForEach-Object {
-        Write-Host ("{0,2}. {1}" -f $index, $_.FullName)
-        $index++
-    }
-
-    $choice = Read-Host 'Project'
-    if ([int]::TryParse($choice, [ref]$index) -and $index -ge 1 -and $index -le $orderedDirectories.Count) {
-        return $orderedDirectories[$index - 1].FullName
-    }
-
-    $null
+    Select-FromNumberedMenu -Items $orderedDirectories -Prompt 'Project' `
+        -DisplayScript { param($directory) $directory.FullName } `
+        -ValueScript { param($directory) $directory.FullName }
 }
 
 function Resolve-WorkonProjectPath {
@@ -1170,7 +1149,7 @@ function workon {
     }
 
     if ($Code) {
-        if (Get-Command code -ErrorAction SilentlyContinue) {
+        if (Test-Command code -Application) {
             code .
         }
         else {

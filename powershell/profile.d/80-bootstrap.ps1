@@ -220,7 +220,7 @@ it is gitignored and takes precedence over the committed example when present.
         }
     }
 
-    if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
+    if (-not (Test-Command git -Application)) {
         Write-Warning 'git is not installed or not on PATH.'
         return
     }

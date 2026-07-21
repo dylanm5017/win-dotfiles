@@ -5,7 +5,7 @@ foreach ($aliasName in 'ls', 'll', 'gs', 'gc', 'gp', 'grep', 'cat', 'ni', 'nv', 
 }
 
 function ls {
-    if (Get-Command eza -ErrorAction SilentlyContinue) {
+    if (Test-Command eza -Application) {
         eza --icons @args
         return
     }
@@ -14,7 +14,7 @@ function ls {
 }
 
 function ll {
-    if (Get-Command eza -ErrorAction SilentlyContinue) {
+    if (Test-Command eza -Application) {
         eza -lah --icons --git @args
         return
     }
@@ -23,7 +23,7 @@ function ll {
 }
 
 function lt {
-    if (Get-Command eza -ErrorAction SilentlyContinue) {
+    if (Test-Command eza -Application) {
         eza --tree --level=2 --icons --git-ignore @args
         return
     }
@@ -42,25 +42,16 @@ function gc {
 function gp {
     git pull @args
 }
-
-function gpl {
-    git pull @args
-}
-
-function gpull {
-    git pull @args
-}
-
-function gpsh {
-    git push @args
-}
+Set-Alias -Name gpl -Value gp -Force
+Set-Alias -Name gpull -Value gp -Force
 
 function gpush {
     git push @args
 }
+Set-Alias -Name gpsh -Value gpush -Force
 
 function grep {
-    if (Get-Command rg -ErrorAction SilentlyContinue) {
+    if (Test-Command rg -Application) {
         rg @args
         return
     }
@@ -69,7 +60,7 @@ function grep {
 }
 
 function cat {
-    if (Get-Command bat -ErrorAction SilentlyContinue) {
+    if (Test-Command bat -Application) {
         bat @args
         return
     }
@@ -104,17 +95,13 @@ function ni {
     }
 }
 
-function nv {
+function Use-NodeVersion {
     param([string]$Version)
 
     nvm use (Resolve-NodeVersion $Version)
 }
-
-function nd {
-    param([string]$Version)
-
-    nvm use (Resolve-NodeVersion $Version)
-}
+Set-Alias -Name nv -Value Use-NodeVersion -Force
+Set-Alias -Name nd -Value Use-NodeVersion -Force
 
 function nvmrc {
     param([string]$Version)
@@ -144,7 +131,7 @@ function Sync-WinDotfilesPackages {
     [CmdletBinding()]
     param()
 
-    if (-not (Get-Command scoop -ErrorAction SilentlyContinue)) {
+    if (-not (Test-Command scoop -Application)) {
         Write-Warning 'scoop is not installed or not on PATH.'
         return
     }

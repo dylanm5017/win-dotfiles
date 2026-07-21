@@ -3,7 +3,7 @@
 $global:WinDotfilesPromptMode = if ($env:WINDOTFILES_PROMPT) {
     $env:WINDOTFILES_PROMPT.ToLowerInvariant()
 }
-elseif (Get-Command starship -ErrorAction SilentlyContinue) {
+elseif (Test-Command starship -Application) {
     'starship'
 }
 else {
@@ -186,7 +186,7 @@ if ($IsInteractiveShell -and $global:WinDotfilesPromptMode -eq 'starship' -and (
     # Transient prompt: once a command runs, collapse its (multi-line) prompt back to just the
     # ❯ character so scrollback stays clean and focused on output. starship's PowerShell init
     # defines Enable-TransientPrompt (needs PSReadLine); guard so a stripped env is a no-op.
-    if (Get-Command Enable-TransientPrompt -ErrorAction SilentlyContinue) {
+    if (Test-Command Enable-TransientPrompt) {
         Enable-TransientPrompt
     }
 }

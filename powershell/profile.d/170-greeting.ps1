@@ -29,7 +29,7 @@ function Show-WinDotfilesGreeting {
     }
     else {
         # Lightweight fallback when fastfetch is not installed.
-        $theme = if (Get-Command Get-WinDotfilesActiveThemeName -ErrorAction SilentlyContinue) { Get-WinDotfilesActiveThemeName } else { 'ashes' }
+        $theme = if (Test-Command Get-WinDotfilesActiveThemeName) { Get-WinDotfilesActiveThemeName } else { 'ashes' }
         Write-Host ''
         Write-Host '  ❯_ win·dotfiles' -ForegroundColor Magenta -NoNewline
         Write-Host "   $($env:USERNAME)@$($env:COMPUTERNAME)  ·  theme: $theme" -ForegroundColor DarkGray

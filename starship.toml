@@ -7,7 +7,7 @@ command_timeout = 500
 scan_timeout = 10
 
 # Active palette — rewritten by `theme set <name>` (themes/<name>.psd1 StarshipPalette).
-palette = "dracula"
+palette = "rosepine"
 
 # Core modules reference the active palette's roles, so flipping `palette` above recolors the
 # prompt in lock-step with the rest of the theme. Keep the default starship layout; only restyle.

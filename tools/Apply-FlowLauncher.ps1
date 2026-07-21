@@ -70,6 +70,9 @@ try {
     Set-FlowProperty $settings 'ColorScheme' 'Dark'
     Set-FlowProperty $settings 'QueryBoxFont' 'CaskaydiaCove NF'
     Set-FlowProperty $settings 'StartFlowLauncherOnSystemStartup' $true
+    # Skip the network plugin-update check at launch so the hotkey is ready sooner after login
+    # (update manually anytime via the `pm` action keyword).
+    Set-FlowProperty $settings 'AutoUpdatePlugins' $false
 
     # Depth-truncation guard: past the cap ConvertTo-Json emits a .ToString() blob instead of the
     # nested object, silently corrupting Flow settings. Its truncation warning is the reliable signal.

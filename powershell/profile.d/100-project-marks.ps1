@@ -1,14 +1,14 @@
-function Set-Mark-Proj {
+function Set-ProjectMark {
     Set-Variable -Scope Global -Name proj -Value (Get-Location)
 }
 
-function Invoke-Set-Mark-Proj {
+function Set-LocationToProjectMark {
     Set-Location $global:proj
 }
 
 if ($null -eq $global:proj) {
-    Set-Mark-Proj
+    Set-ProjectMark
 }
 
-Set-Alias mark Set-Mark-Proj
-Set-Alias goto Invoke-Set-Mark-Proj
+Set-Alias mark Set-ProjectMark
+Set-Alias goto Set-LocationToProjectMark

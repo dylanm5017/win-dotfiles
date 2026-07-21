@@ -1,4 +1,4 @@
-function Find-Kill-Port {
+function Stop-PortProcess {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
@@ -39,7 +39,7 @@ function Find-Kill-Port {
     }
 }
 
-Set-Alias findkill Find-Kill-Port
+Set-Alias findkill Stop-PortProcess
 
 function ConvertTo-TimeDifferencePoint {
     param([Parameter(Mandatory)][string]$Value)
@@ -96,7 +96,7 @@ function Format-TimeDifferenceDuration {
     '{0}:{1:00}' -f [math]::Floor($Duration.TotalHours), $Duration.Minutes
 }
 
-function Find-Time-Difference {
+function Get-TimeDifference {
     [CmdletBinding()]
     param(
         [Parameter(Position = 0, ValueFromRemainingArguments)]
@@ -158,30 +158,61 @@ function Find-Time-Difference {
     }
 }
 
-Set-Alias td Find-Time-Difference
+Set-Alias td Get-TimeDifference
+
+function Get-NpmOutdatedReport {
+    # Parse `npm outdated --json` in the current directory into flat rows (Package/Current/
+    # Wanted/Latest). Returns @() when everything is up to date (npm prints nothing) or when
+    # npm is missing / the output can't be parsed. Shared by npm2excel and npmout-all.
+    if (-not (Test-Command npm -Application)) {
+        Write-Warning 'npm is not installed or not on PATH.'
+        return @()
+    }
+
+    $json = npm outdated --json | Out-String
+    if (-not $json.Trim()) {
+        return @()
+    }
+
+    try {
+        $data = $json | ConvertFrom-Json
+    }
+    catch {
+        Write-Warning "npm outdated output could not be parsed: $($_.Exception.Message)"
+        return @()
+    }
+
+    foreach ($package in $data.PSObject.Properties.Name) {
+        $info = $data.$package
+        [PSCustomObject]@{
+            Package = $package
+            Current = $info.current
+            Wanted  = $info.wanted
+            Latest  = $info.latest
+        }
+    }
+}
 
 function npm2excel {
     param([string]$Output = 'npm-outdated.xlsx')
 
     try {
-        $json = npm outdated --json | Out-String
-        if (-not $json) {
+        $report = @(Get-NpmOutdatedReport)
+        if ($report.Count -eq 0) {
             Write-Host 'All packages up to date.'
             return
         }
 
-        $data = $json | ConvertFrom-Json
-        $rows = foreach ($pkg in $data.PSObject.Properties.Name) {
-            $info = $data.$pkg
+        $rows = foreach ($entry in $report) {
             [PSCustomObject]@{
-                Package    = $pkg
-                Current    = $info.current
-                Wanted     = $info.wanted
-                Latest     = $info.latest
-                UpdateType = if ($info.current -eq $info.latest) {
+                Package    = $entry.Package
+                Current    = $entry.Current
+                Wanted     = $entry.Wanted
+                Latest     = $entry.Latest
+                UpdateType = if ($entry.Current -eq $entry.Latest) {
                     'Up to date'
                 }
-                elseif ($info.wanted -eq $info.latest) {
+                elseif ($entry.Wanted -eq $entry.Latest) {
                     'Minor/Patch'
                 }
                 else {
@@ -243,22 +274,15 @@ function npmout-all {
     $results = @()
 
     Get-ChildItem -LiteralPath $Root -Directory | Where-Object { Test-Path -LiteralPath (Join-Path $_.FullName 'package.json') } | ForEach-Object {
+        $repoName = $_.Name
         Push-Location -LiteralPath $_.FullName
         try {
-            $json = npm outdated --json | Out-String
-
-            if ($json) {
-                $data = $json | ConvertFrom-Json
-
-                foreach ($pkg in $data.PSObject.Properties.Name) {
-                    $info = $data.$pkg
-
-                    $results += [PSCustomObject]@{
-                        Repo    = $_.Name
-                        Package = $pkg
-                        Current = $info.current
-                        Latest  = $info.latest
-                    }
+            foreach ($entry in Get-NpmOutdatedReport) {
+                $results += [PSCustomObject]@{
+                    Repo    = $repoName
+                    Package = $entry.Package
+                    Current = $entry.Current
+                    Latest  = $entry.Latest
                 }
             }
         }
@@ -311,9 +335,9 @@ function Invoke-DevDoctor {
 
     Write-Host "`nNode/npm:"
     Write-Host "node path: $(Get-CommandSummary node)"
-    if (Get-Command node -ErrorAction SilentlyContinue) { node -v }
+    if (Test-Command node -Application) { node -v }
     Write-Host "npm path:  $(Get-CommandSummary npm)"
-    if (Get-Command npm -ErrorAction SilentlyContinue) {
+    if (Test-Command npm -Application) {
         npm -v
         Write-Host "npm prefix:"
         npm config get prefix
@@ -323,9 +347,9 @@ function Invoke-DevDoctor {
 
     Write-Host "`nPython/pip:"
     Write-Host "python path: $(Get-CommandSummary python)"
-    if (Get-Command python -ErrorAction SilentlyContinue) { python --version }
+    if (Test-Command python -Application) { python --version }
     Write-Host "pip path:    $(Get-CommandSummary pip)"
-    if (Get-Command pip -ErrorAction SilentlyContinue) {
+    if (Test-Command pip -Application) {
         pip --version
         Write-Host "pip cache:"
         pip cache dir
@@ -333,26 +357,26 @@ function Invoke-DevDoctor {
 
     Write-Host "`n.NET/NuGet:"
     Write-Host "dotnet path: $(Get-CommandSummary dotnet)"
-    if (Get-Command dotnet -ErrorAction SilentlyContinue) {
+    if (Test-Command dotnet -Application) {
         dotnet --version
         dotnet nuget locals all --list
     }
 
     Write-Host "`nGo:"
     Write-Host "go path: $(Get-CommandSummary go)"
-    if (Get-Command go -ErrorAction SilentlyContinue) {
+    if (Test-Command go -Application) {
         go env GOPATH GOMODCACHE GOCACHE
     }
 
     Write-Host "`nRust/Cargo:"
     Write-Host "cargo path: $(Get-CommandSummary cargo)"
-    if (Get-Command cargo -ErrorAction SilentlyContinue) {
+    if (Test-Command cargo -Application) {
         cargo --version
         Write-Host "CARGO_HOME=$env:CARGO_HOME"
         Write-Host "RUSTUP_HOME=$env:RUSTUP_HOME"
     }
     Write-Host "rustc path: $(Get-CommandSummary rustc)"
-    if (Get-Command rustc -ErrorAction SilentlyContinue) { rustc --version }
+    if (Test-Command rustc -Application) { rustc --version }
 }
 
 function dev {

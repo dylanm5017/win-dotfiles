@@ -210,7 +210,7 @@ function Import-WinDotfilesCachedCompletion {
         [switch]$Refresh
     )
 
-    if (-not (Get-Command $Tool -CommandType Application -ErrorAction SilentlyContinue)) {
+    if (-not (Test-Command $Tool -Application)) {
         return
     }
 
@@ -241,7 +241,7 @@ if ($IsInteractiveShell) {
     Import-WinDotfilesCachedCompletion -Tool 'gh' -GeneratorArgs @('completion', '-s', 'powershell')
     Import-WinDotfilesCachedCompletion -Tool 'rustup' -GeneratorArgs @('completions', 'powershell')
 
-    if (Get-Command winget -CommandType Application -ErrorAction SilentlyContinue) {
+    if (Test-Command winget -Application) {
         Register-ArgumentCompleter -Native -CommandName winget -ScriptBlock {
             param($wordToComplete, $commandAst, $cursorPosition)
             [Console]::InputEncoding = [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new()
@@ -253,7 +253,7 @@ if ($IsInteractiveShell) {
         }
     }
 
-    if (Get-Command dotnet -CommandType Application -ErrorAction SilentlyContinue) {
+    if (Test-Command dotnet -Application) {
         Register-ArgumentCompleter -Native -CommandName dotnet -ScriptBlock {
             param($wordToComplete, $commandAst, $cursorPosition)
             dotnet complete --position $cursorPosition "$commandAst" | ForEach-Object {
@@ -263,10 +263,10 @@ if ($IsInteractiveShell) {
     }
 
     # scoop completion ships as an optional module; git completion needs posh-git. Wire each only when present.
-    if (Get-Command scoop -ErrorAction SilentlyContinue) {
+    if (Test-Command scoop -Application) {
         Import-WinDotfilesOptionalModule -Name 'scoop-completion' | Out-Null
     }
-    if ((Get-Command git -CommandType Application -ErrorAction SilentlyContinue) -and (Get-Module -ListAvailable posh-git)) {
+    if ((Test-Command git -Application) -and (Get-Module -ListAvailable posh-git)) {
         Import-WinDotfilesOptionalModule -Name 'posh-git' | Out-Null
     }
 }

@@ -186,7 +186,7 @@ function Select-ProjectGroupDirectory {
         throw "No project group directories were found under $ProjectsRoot"
     }
 
-    if (Get-Command fzf -ErrorAction SilentlyContinue) {
+    if (Test-Command fzf -Application) {
         $fzfArgs = New-FzfArgs -Prompt 'group> ' -Label 'groups' -Preview (Get-FzfDirectoryPreviewCommand)
         $selected = $groupDirectories |
         ForEach-Object FullName |
@@ -528,7 +528,7 @@ function Open-ProjectPath {
 
     Set-Location -LiteralPath $Path
     if ($OpenCode) {
-        if (Get-Command code -ErrorAction SilentlyContinue) {
+        if (Test-Command code -Application) {
             code .
         }
         else {
@@ -554,7 +554,7 @@ function Open-ProjectGroup {
         return
     }
 
-    if (-not (Get-Command fzf -ErrorAction SilentlyContinue)) {
+    if (-not (Test-Command fzf -Application)) {
         Open-ProjectPath -Path $group.Path -OpenCode:$Code
         return
     }
@@ -579,7 +579,7 @@ function Invoke-ProjectPicker {
         return
     }
 
-    if (-not (Get-Command fzf -ErrorAction SilentlyContinue)) {
+    if (-not (Test-Command fzf -Application)) {
         Write-Warning 'fzf is not installed or not on PATH.'
         return
     }
@@ -618,7 +618,7 @@ function Open-Project {
     }
 
     if ($matches.Count -gt 1) {
-        if (Get-Command fzf -ErrorAction SilentlyContinue) {
+        if (Test-Command fzf -Application) {
             $fzfArgs = New-FzfArgs -Prompt "$Name> " -Label 'matches' -Preview (Get-FzfDirectoryPreviewCommand)
             $selected = $matches | ForEach-Object FullName | fzf @fzfArgs
             if ($selected) {
@@ -797,67 +797,6 @@ foreach ($projectGroup in Get-ProjectGroups) {
     }
 }
 
-if (Get-Command rg -ErrorAction SilentlyContinue) {
-    $env:FZF_DEFAULT_COMMAND = 'rg --files --hidden --glob "!{.git,node_modules,dist,build,.next,.cache}/**"'
-}
-
-$env:FZF_DEFAULT_OPTS = @(
-    '--with-shell="pwsh -NoProfile -Command"'
-    '--height=70%'
-    '--min-height=18'
-    '--layout=reverse'
-    '--border=rounded'
-    '--margin=1'
-    '--padding=1,2'
-    '--info=inline-right'
-    '--highlight-line'
-    '--cycle'
-    '--scroll-off=4'
-    '--pointer=>'
-    '--marker=+'
-    '--separator=-'
-    '--scrollbar=|'
-    '--bind=ctrl-/:toggle-preview,ctrl-u:clear-query'
-    '--color=bg:-1,bg+:#303030,fg:#d0d0d0,fg+:#ffffff,hl:#5fd7ff,hl+:#5fd7ff,info:#af87ff,prompt:#87d7af,pointer:#ffaf5f,marker:#ffd75f,spinner:#ffaf5f,header:#87d7af,border:#5f5f87,label:#c0c0c0,query:#ffffff'
-) -join ' '
-
-function New-FzfArgs {
-    param(
-        [string]$Prompt = 'search> ',
-        [string]$Label,
-        [string]$Preview,
-        [string]$PreviewWindow = 'right:60%,border-rounded,wrap',
-        [string[]]$ExtraArgs
-    )
-
-    $fzfArgs = @('--prompt', $Prompt)
-    if ($Label) {
-        $fzfArgs += @('--border-label', " $Label ")
-    }
-
-    if ($Preview) {
-        $fzfArgs += @('--preview', $Preview, '--preview-window', $PreviewWindow)
-    }
-
-    if ($ExtraArgs) {
-        $fzfArgs += $ExtraArgs
-    }
-
-    $fzfArgs
-}
-
-function Get-FzfDirectoryPreviewCommand {
-    "if (Test-Path -LiteralPath '{}') { Get-ChildItem -LiteralPath '{}' -Force | Sort-Object Name | Select-Object -First 40 Mode,Length,LastWriteTime,Name | Format-Table -AutoSize }"
-}
-
-function Get-FzfFilePreviewCommand {
-    if (Get-Command bat -ErrorAction SilentlyContinue) {
-        return "bat --style=numbers --color=always --line-range=:200 '{}'"
-    }
-
-    "Get-Content -LiteralPath '{}' -TotalCount 160"
-}
-
 if (Get-Command zoxide -CommandType Application -ErrorAction SilentlyContinue) {
     $global:__WinDotfilesZoxidePath = (Get-Command zoxide -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1).Source
 
@@ -961,45 +900,3 @@ if (Get-Command zoxide -CommandType Application -ErrorAction SilentlyContinue) {
     Set-Alias -Name zi -Value __zoxide_zi -Option AllScope -Scope Global -Force
 }
 
-function Invoke-FzfFile {
-    if (-not (Get-Command fzf -ErrorAction SilentlyContinue)) {
-        Write-Warning 'fzf is not installed or not on PATH.'
-        return
-    }
-
-    $source = if (Get-Command rg -ErrorAction SilentlyContinue) {
-        rg --files
-    }
-    elseif (Get-Command fd -ErrorAction SilentlyContinue) {
-        fd --type file
-    }
-    else {
-        Get-ChildItem -Recurse -File -ErrorAction SilentlyContinue | ForEach-Object FullName
-    }
-
-    $fzfArgs = New-FzfArgs -Prompt 'file> ' -Label 'files' -Preview (Get-FzfFilePreviewCommand)
-    $source | fzf @fzfArgs
-}
-
-function Invoke-FzfHistory {
-    if (-not (Get-Command fzf -ErrorAction SilentlyContinue)) {
-        Write-Warning 'fzf is not installed or not on PATH.'
-        return
-    }
-
-    $historyPath = if (Get-Module PSReadLine) {
-        (Get-PSReadLineOption).HistorySavePath
-    }
-
-    if ($historyPath -and (Test-Path $historyPath)) {
-        $fzfArgs = New-FzfArgs -Prompt 'history> ' -Label 'history' -ExtraArgs @('--tac', '--scheme=history')
-        Get-Content -LiteralPath $historyPath |
-        Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
-        Select-Object -Unique |
-        fzf @fzfArgs
-    }
-}
-
-function ff {
-    Invoke-FzfFile
-}

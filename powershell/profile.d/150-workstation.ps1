@@ -393,6 +393,27 @@ function Get-WinWorkstationStartupCommands {
     }
 }
 
+function Get-WinWorkstationDisabledStartupNames {
+    # Names the user (or winsmooth) has disabled via Task Manager's StartupApproved flag
+    # (byte0 = 0x02 enabled, else disabled). Startup-folder records carry a .lnk suffix that
+    # Win32_StartupCommand omits, so both forms are added for matching.
+    $names = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    foreach ($sub in 'Run', 'StartupFolder') {
+        $key = "Registry::HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\$sub"
+        if (-not (Test-Path -LiteralPath $key)) { continue }
+        $item = Get-Item -LiteralPath $key -ErrorAction SilentlyContinue
+        if (-not $item) { continue }
+        foreach ($name in $item.Property) {
+            $value = (Get-ItemProperty -LiteralPath $key -Name $name -ErrorAction SilentlyContinue).$name
+            if ($value -and $value.Count -ge 1 -and $value[0] -ne 0x02) {
+                [void]$names.Add($name)
+                [void]$names.Add(($name -replace '\.lnk$', ''))
+            }
+        }
+    }
+    $names
+}
+
 function Get-WinWorkstationServiceState {
     $serviceNames = @('WSearch', 'SysMain', 'WinDefend', 'BITS', 'DoSvc', 'wuauserv', 'Tailscale', 'Everything', 'com.docker.service')
 
@@ -821,8 +842,13 @@ function Invoke-WinWorkstationCheck {
 
     $startupCommands = @(Get-WinWorkstationStartupCommands)
     if ($startupCommands) {
-        $noisyStartup = @($startupCommands | Where-Object { $_.Name -match 'Spotify|Steam|MicrosoftEdgeAutoLaunch|Send to OneNote|Teams|Slack' })
-        [void]$results.Add((New-WinWorkstationCheckResult -Category 'Startup' -Name 'Startup apps' -Status $(if ($noisyStartup) { 'Warn' } else { 'OK' }) -Detail "total=$($startupCommands.Count); noisy=$($noisyStartup.Name -join ', ')" -Recommendation 'winsmooth -Apply trims the balanced startup set.'))
+        # Win32_StartupCommand lists Run/Startup entries regardless of the Task Manager toggle, so
+        # exclude ones disabled via StartupApproved to report what actually launches at login.
+        $disabledNames = Get-WinWorkstationDisabledStartupNames
+        $enabledStartup = @($startupCommands | Where-Object { -not $disabledNames.Contains([string]$_.Name) })
+        $noisyPattern = 'Spotify|Steam|MicrosoftEdgeAutoLaunch|Send to OneNote|Teams|Slack|Discord|Docker Desktop|EpicGamesLauncher|EADM|RiotClient|GogGalaxy|CurseForge|Overwolf|BakkesMod|Notion|com\.cron|Microsoft\.Lists|OneDrive|GoogleChromeAutoLaunch'
+        $noisyStartup = @($enabledStartup | Where-Object { $_.Name -match $noisyPattern })
+        [void]$results.Add((New-WinWorkstationCheckResult -Category 'Startup' -Name 'Startup apps' -Status $(if ($noisyStartup) { 'Warn' } else { 'OK' }) -Detail "total=$($startupCommands.Count); enabled=$($enabledStartup.Count); noisy=$($noisyStartup.Name -join ', ')" -Recommendation 'winsmooth -Apply trims the balanced startup set.'))
     }
     else {
         [void]$results.Add((New-WinWorkstationCheckResult -Category 'Startup' -Name 'Startup apps' -Status 'Unknown' -Detail 'Win32_StartupCommand was unavailable.'))
@@ -1618,10 +1644,21 @@ function Disable-WinWorkstationStartupItems {
         [switch]$DeepWork
     )
 
-    $targetPatterns = @('^Spotify$', '^Steam$', '^MicrosoftEdgeAutoLaunch_', '^Send to OneNote$')
-    if ($DeepWork) {
-        $targetPatterns += @('^Teams$', '^com\.squirrel\.slack\.slack$')
-    }
+    # Heavy/unnecessary login autostarts to trim: gaming launchers, Docker Desktop, and
+    # work/comms apps. Most are already disabled on the primary machine (a prior debloat pass),
+    # so those are no-ops here, but they are listed so a fresh setup - or an app that re-enables
+    # itself - gets the same lean startup. Every removal is backed up and reverted by
+    # `winsmooth -RestoreLast`. ($DeepWork is retained for call-site compatibility; the former
+    # DeepWork-only Teams/Slack entries are now part of the default set.)
+    $targetPatterns = @(
+        '^Spotify$', '^Steam$', '^MicrosoftEdgeAutoLaunch_', '^Send to OneNote$'
+        '^Discord$', '^EpicGamesLauncher$', '^EADM$', '^RiotClient$', '^GogGalaxy$'
+        '^electron\.app\.CurseForge$', '^Overwolf$', '^BakkesMod$'
+        '^Docker Desktop$'
+        '^Teams$', '^com\.squirrel\.slack\.slack$', '^electron\.app\.Notion$'
+        '^com\.cron\.electron$', '^Microsoft\.Lists$', '^OneDrive$'
+        '^GoogleChromeAutoLaunch_'
+    )
 
     $startupCommands = @(Get-WinWorkstationStartupCommands)
     foreach ($startupCommand in $startupCommands) {
@@ -1652,6 +1689,66 @@ function Disable-WinWorkstationStartupItems {
             Write-Host "Disabled startup shortcut: $($startupCommand.Name)" -ForegroundColor Yellow
         }
     }
+
+    # Removing the Run value alone is not durable: Electron/Squirrel apps (Teams, Docker, Discord,
+    # Slack, ...) re-register their Run entry on next launch. Also set the Task Manager "disabled"
+    # flag (StartupApproved\Run byte0 = 0x03), which gates the entry even after it reappears.
+    Disable-WinWorkstationStartupApproved -Manifest $Manifest -Patterns $targetPatterns -Force @('Teams', 'Docker Desktop')
+
+    # Let Flow/Ditto/QuickLook/Yasb come up promptly: clear Windows' deliberate post-logon throttle
+    # of Run-key apps (the "quick search not ready yet" window at boot).
+    Set-WinWorkstationStartupDelay -Manifest $Manifest
+}
+
+function Disable-WinWorkstationStartupApproved {
+    param(
+        [Parameter(Mandatory)]$Manifest,
+        [string[]]$Patterns = @(),
+        [string[]]$Force = @()
+    )
+
+    # StartupApproved\Run holds Task Manager's per-app enable/disable flag: byte0 0x02 = enabled,
+    # 0x03 = disabled (verified against live entries). Writing the disabled record survives an app
+    # re-adding its Run value. Set-WinWorkstationRegistryValue backs up the prior bytes first, so
+    # `winsmooth -RestoreLast` re-enables anything this turned off.
+    $key = 'Registry::HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run'
+    $disabled = [byte[]](0x03, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+
+    $existing = @()
+    if (Test-Path -LiteralPath $key) { $existing = @((Get-Item -LiteralPath $key).Property) }
+
+    # Flip any existing record whose name matches the trim patterns (also catches Chrome's
+    # machine-specific GoogleChromeAutoLaunch_<hash> suffix), plus force-disable the named
+    # self-re-registering heavies even when no record exists yet.
+    $targets = [System.Collections.Generic.List[string]]::new()
+    foreach ($name in $existing) {
+        foreach ($pattern in $Patterns) {
+            if ($name -match $pattern) { [void]$targets.Add($name); break }
+        }
+    }
+    foreach ($name in $Force) {
+        if ($targets -notcontains $name) { [void]$targets.Add($name) }
+    }
+
+    foreach ($name in $targets) {
+        if ($existing -contains $name) {
+            $current = (Get-ItemProperty -LiteralPath $key -Name $name -ErrorAction SilentlyContinue).$name
+            if ($current -and $current.Count -ge 1 -and $current[0] -eq 0x03) { continue }  # already disabled
+        }
+        Set-WinWorkstationRegistryValue -Path $key -Name $name -Value $disabled -Manifest $Manifest -Type Binary
+        Write-Host "Disabled startup (Task Manager flag): $name" -ForegroundColor Yellow
+    }
+}
+
+function Set-WinWorkstationStartupDelay {
+    param([Parameter(Mandatory)]$Manifest)
+
+    # With Serialize\StartupDelayInMSec unset, Windows throttles Run-key startup apps for several
+    # seconds after the desktop appears, which is why the Flow quick-search hotkey lands late at
+    # boot. Setting it to 0 removes that deliberate delay. Backed up + reverted by RestoreLast.
+    $key = 'Registry::HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Serialize'
+    Set-WinWorkstationRegistryValue -Path $key -Name 'StartupDelayInMSec' -Value 0 -Manifest $Manifest -Type DWord
+    Write-Host 'Cleared Windows Run-key startup delay (StartupDelayInMSec = 0).' -ForegroundColor Yellow
 }
 
 function Set-WinWorkstationSearchIndexing {
@@ -2119,7 +2216,7 @@ function Invoke-WinWorkstationSmooth {
         'Theme Flow Launcher, bind it to Alt+Space, and enable its autostart (no-op if Flow is absent)'
         'Import committed Windhawk mods (windhawk/state) when present'
         'Apply the active desktop theme: window accent color and the generated wallpaper'
-        'Disable balanced startup noise: Spotify, Steam, Edge autolaunch, Send to OneNote'
+        'Trim heavy login autostarts (gaming launchers, Docker, Teams/work-comms) durably, and clear the Windows Run-key startup delay so Flow is ready sooner'
         'Mark dev roots as not content indexed'
         'Add Defender path exclusions for dev/tool/cache roots when permissions allow'
         'Kill shell animations and set raw pointer + fast key repeat'

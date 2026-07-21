@@ -4,7 +4,7 @@ if ($IsInteractiveShell -and (Get-Module PSReadLine)) {
     Set-PSReadLineKeyHandler -Chord Shift+Tab -Function MenuComplete
 }
 
-if ($IsInteractiveShell -and (Get-Module PSReadLine) -and (Get-Command fzf -ErrorAction SilentlyContinue)) {
+if ($IsInteractiveShell -and (Get-Module PSReadLine) -and (Test-Command fzf -Application)) {
     Set-PSReadLineKeyHandler -Chord Ctrl+r -BriefDescription FzfHistory -LongDescription 'Search command history with fzf' -ScriptBlock {
         $selected = Invoke-FzfHistory
         if ($selected) {

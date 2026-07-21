@@ -56,6 +56,11 @@
   ],
   "ignore_rules": [
     {
+      "kind": "Title",
+      "id": "win-dotfiles Theme Picker",
+      "matching_strategy": "Equals"
+    },
+    {
       "kind": "Class",
       "id": "MSCTFIME UI",
       "matching_strategy": "Equals"
@@ -175,7 +180,7 @@
   "border_style": "Rounded",
   "theme": {
     "palette": "Base16",
-    "name": "Dracula",
+    "name": "RosePine",
     "unfocused_border": "Base03",
     "bar_accent": "Base0E"
   },

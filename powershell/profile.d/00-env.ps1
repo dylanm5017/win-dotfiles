@@ -98,6 +98,23 @@ $IsInteractiveShell = [Environment]::UserInteractive -and
 -not [Console]::IsInputRedirected -and
 -not [Console]::IsOutputRedirected
 
+function Test-Command {
+    # The single existence-check idiom for the whole profile. Default probes any command
+    # (cmdlet/function/alias/application); -Application restricts to real executables on PATH,
+    # which is what you want before invoking an external tool like git/dotnet/fzf.
+    param(
+        [Parameter(Mandatory)][string]$Name,
+        [switch]$Application
+    )
+
+    if ($Application) {
+        [bool](Get-Command -Name $Name -CommandType Application -ErrorAction SilentlyContinue)
+    }
+    else {
+        [bool](Get-Command -Name $Name -ErrorAction SilentlyContinue)
+    }
+}
+
 function Set-LocationIfExists {
     param([Parameter(Mandatory)][string]$Path)
 

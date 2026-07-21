@@ -365,30 +365,30 @@ function Set-WinDotfilesTheme {
     # configs automatically; Windows Terminal needs the overlay re-merged, and the desktop
     # accent/wallpaper are applied via the winsmooth helpers (which back up what they change).
     $manifest = $null
-    if (Get-Command New-WinWorkstationBackupManifest -ErrorAction SilentlyContinue) {
+    if (Test-Command New-WinWorkstationBackupManifest) {
         $manifest = New-WinWorkstationBackupManifest
     }
 
     try {
-        if ($manifest -and (Get-Command Set-WinWorkstationTerminalSettings -ErrorAction SilentlyContinue)) {
+        if ($manifest -and (Test-Command Set-WinWorkstationTerminalSettings)) {
             Set-WinWorkstationTerminalSettings -Manifest $manifest
         }
-        if ($manifest -and (Get-Command Set-WinWorkstationDesktopTheme -ErrorAction SilentlyContinue)) {
+        if ($manifest -and (Test-Command Set-WinWorkstationDesktopTheme)) {
             Set-WinWorkstationDesktopTheme -Manifest $manifest -ThemeName $slug
         }
         # VSCode: deep-merge the (just-rewritten) overlay into the live settings.json. VSCode
         # watches settings.json, so the workbench recolours instantly.
-        if ($manifest -and (Get-Command Set-WinWorkstationVSCodeSettings -ErrorAction SilentlyContinue)) {
+        if ($manifest -and (Test-Command Set-WinWorkstationVSCodeSettings)) {
             Set-WinWorkstationVSCodeSettings -Manifest $manifest
         }
     }
     finally {
-        if ($manifest -and (Get-Command Save-WinWorkstationBackupManifest -ErrorAction SilentlyContinue)) {
+        if ($manifest -and (Test-Command Save-WinWorkstationBackupManifest)) {
             Save-WinWorkstationBackupManifest -Manifest $manifest
         }
     }
 
-    if (Get-Command komorebic -ErrorAction SilentlyContinue) {
+    if (Test-Command komorebic -Application) {
         if (Get-Process -Name komorebi -ErrorAction SilentlyContinue) {
             komorebic reload-configuration | Out-Null
             Write-Host 'Reloaded komorebi (borders repaint).' -ForegroundColor DarkGray
@@ -396,7 +396,7 @@ function Set-WinDotfilesTheme {
     }
 
     # Yasb hot-reloads the symlinked styles.css automatically; nudge it for the copy-fallback case.
-    if (Get-Command yasbc -ErrorAction SilentlyContinue) {
+    if (Test-Command yasbc -Application) {
         if (Get-Process -Name yasb -ErrorAction SilentlyContinue) {
             yasbc reload --silent 2>$null | Out-Null
             Write-Host 'Reloaded Yasb (status bar repaint).' -ForegroundColor DarkGray
@@ -405,7 +405,7 @@ function Set-WinDotfilesTheme {
 
     # Spotify: re-theme via Spicetify (no-op if Spicetify/Spotify aren't installed).
     $spicetifyScript = Join-Path $WinDotfilesRoot 'tools\Apply-Spicetify.ps1'
-    if ((Get-Command spicetify -ErrorAction SilentlyContinue) -and (Test-Path -LiteralPath $spicetifyScript -PathType Leaf)) {
+    if ((Test-Command spicetify -Application) -and (Test-Path -LiteralPath $spicetifyScript -PathType Leaf)) {
         & $spicetifyScript -Scheme $slug
     }
 

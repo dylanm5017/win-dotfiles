@@ -46,6 +46,36 @@ Not tracked:
 - `pkgsync` (alias `pkglist`) refreshes `packages/scoop.json` from what is currently installed,
   keeping the clean shape so diffs stay meaningful. `winget.json` is hand-curated and left alone.
 
+## PowerShell profile
+
+`powershell/profile.ps1` is a thin loader; the real configuration is split into small,
+single-concern modules under `powershell/profile.d/`, dot-sourced in the order listed in the
+loader's `$ProfileScripts` array. The two-digit prefix encodes both order and rough grouping:
+
+- **00–45 core**: environment/paths (`00-env`, `10-path`), module imports (`20-modules`),
+  history (`30-history`), prompt (`40-prompt`), theme switcher (`45-theme`).
+- **48 lib**: `48-fzf.ps1` — the shared fzf helper library (defaults, `New-FzfArgs`, preview
+  commands, and the `Select-FromNumberedMenu` fallback). Loads before every consumer.
+- **50–90 commands**: navigation + zoxide (`50-navigation`), aliases (`60-aliases`), keybindings
+  (`70-keybindings`), bootstrap (`80-bootstrap`), SQL helpers (`90-sql`).
+- **100–170 workflow**: project marks/registry (`100`, `160`), dev + workflow tooling (`110`,
+  `115`), completions (`130`), the reliability suite (`140`), workstation tuning (`150`), and the
+  login greeting (`170`, numbered last).
+
+Conventions, so new modules stay consistent:
+
+- **Naming**: internal helpers are PowerShell `Verb-Noun` (`Get-`, `Set-`, `Test-`, `Invoke-`…);
+  the short, CLI-style commands you actually type (`gs`, `ni`, `dev`, `mark`, `td`) are exposed as
+  aliases onto those functions, never as the function name itself.
+- **Tool checks**: use the single `Test-Command` helper (defined in `00-env.ps1`) to guard on a
+  command's presence — `Test-Command git -Application` for external executables, `Test-Command
+  Some-Function` for cmdlets/functions. Prefer it over inline `Get-Command … -ErrorAction
+  SilentlyContinue` for existence checks.
+- **Local / private additions**: machine-specific or project-specific helpers go in the
+  gitignored `powershell/profile.local.ps1` (sourced last), and private project group names go in
+  `powershell/projects.local.json` — neither is committed. Set `WINDOTFILES_PROFILE_DEBUG=1` to
+  print per-module load timings, or run `profileperf` for a timing table.
+
 ## Terminal
 
 - Windows Terminal styling lives in `terminal/windows-terminal/settings.json` (the `Ashes`
@@ -56,7 +86,19 @@ Not tracked:
 - WezTerm is available to try alongside Windows Terminal: `terminal/wezterm/wezterm.lua`
   (same theme and font, via a built-in color scheme) is linked to `~/.config/wezterm/wezterm.lua`
   by `winsmooth`/`install.ps1`. `Alt+Enter` launches the terminal (WezTerm if installed, else
-  Windows Terminal).
+  Windows Terminal). Its config is Lua, so it does more than the static overlay:
+  - **Status bar** — the right side of the tab bar shows the active workspace, current project
+    (cwd basename), git branch, battery, and clock, coloured from the live scheme so it tracks
+    `theme`.
+  - **Project switcher** — `ctrl+shift+p` fuzzy-picks a directory under `C:\Workspace\Projects`
+    (plus any `projects.local.json` group roots) and opens/switches to a per-project **workspace**;
+    `ctrl+shift+s` fuzzy-switches between already-open workspaces.
+  - **Smart hyperlinks** — git hashes, `file:line`, and ticket IDs become clickable. The base URLs
+    are read from env vars so nothing project-specific is committed: `WEZTERM_GH_REPO` (`#123` →
+    GitHub issue), `WEZTERM_GIT_REPO` (hash → commit), `WEZTERM_ADO_BASE` (`AB#123` → ADO work
+    item). `ctrl+shift+space` quick-selects hashes and `file:line` locations without a link.
+  - **OS auto light/dark** — when Windows switches to light mode, the theme-managed (dark) scheme
+    is overridden with a light counterpart; dark mode leaves the `theme`-set scheme authoritative.
 - Both terminals carry a **subtle acrylic frost** that echoes the frosted Yasb bars and komorebi
   borders, kept conservative so text stays crisp: Windows Terminal uses `useAcrylic` at `opacity`
   95; WezTerm uses `win32_system_backdrop = 'Acrylic'` at `window_background_opacity` 0.94.
