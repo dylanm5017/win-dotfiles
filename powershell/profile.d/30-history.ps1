@@ -13,6 +13,15 @@ if (Get-Module PSReadLine) {
     Set-PSReadLineOption -AddToHistoryHandler {
         param($line)
 
+        # Accepted-line hook, so it doubles as this profile's "preexec": alias tips (65-alias-tips)
+        # print between the typed line and its output. A tip must never break the prompt.
+        try {
+            Show-WinDotfilesAliasTip -Line $line
+        }
+        catch {
+            Write-Verbose "Alias tip skipped: $($_.Exception.Message)"
+        }
+
         if ($line -match '(?i)password|secret|token|apikey|api[_-]?key|connectionstring|-AsPlainText') {
             # Usable for the rest of the session, but never written to the history file.
             return [Microsoft.PowerShell.AddToHistoryOption]::MemoryOnly

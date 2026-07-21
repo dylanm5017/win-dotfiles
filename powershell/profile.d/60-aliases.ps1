@@ -39,6 +39,10 @@ function gc {
     git commit @args
 }
 
+function gch {
+    git checkout @args
+}
+
 function gp {
     git pull @args
 }
@@ -102,6 +106,11 @@ function Use-NodeVersion {
 }
 Set-Alias -Name nv -Value Use-NodeVersion -Force
 Set-Alias -Name nd -Value Use-NodeVersion -Force
+
+function nru {
+    # The direct form. `nr` is the interactive picker (Invoke-NpmScript in 115-workflow-tools).
+    npm run @args
+}
 
 function nvmrc {
     param([string]$Version)

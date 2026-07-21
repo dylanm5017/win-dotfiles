@@ -8,6 +8,7 @@ $ProfileScripts = @(
     '48-fzf.ps1'
     '50-navigation.ps1'
     '60-aliases.ps1'
+    '65-alias-tips.ps1'
     '70-keybindings.ps1'
     '80-bootstrap.ps1'
     '90-sql.ps1'
