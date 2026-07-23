@@ -8,6 +8,7 @@ $WinWorkstationKomorebiBarSourcePath = Join-Path $WinDotfilesRoot 'komorebi\komo
 $WinWorkstationKomorebiTargetPath = Join-Path $HOME 'komorebi.json'
 $WinWorkstationWhkdTargetPath = Join-Path $HOME '.config\whkdrc'
 $WinWorkstationKomorebiBarTargetPath = Join-Path $HOME 'komorebi.bar.json'
+$WinWorkstationKomorebiDiagRoot = Join-Path $CacheRoot 'win-dotfiles\komorebi-diagnostics'
 $WinWorkstationYasbConfigSourcePath = Join-Path $WinDotfilesRoot 'yasb\config.yaml'
 $WinWorkstationYasbStylesSourcePath = Join-Path $WinDotfilesRoot 'yasb\styles.css'
 $WinWorkstationYasbConfigTargetPath = Join-Path $HOME '.config\yasb\config.yaml'
@@ -1432,6 +1433,15 @@ function Set-WinWorkstationKomorebiSettings {
     if (Get-Command komorebic -ErrorAction SilentlyContinue) {
         $komorebiAutostartShortcut = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\Startup\komorebi.lnk'
         Backup-WinWorkstationFile -Path $komorebiAutostartShortcut -Manifest $Manifest
+        # Persist RUST_BACKTRACE=full at User scope so the autostart komorebi (launched by the
+        # Startup .lnk, outside this profile) emits a full backtrace if it panics. This is what
+        # turns the occasional WM-lock hang / border use-after-free into a reportable trace in
+        # the komorebi log instead of a silent crash. Session shells pick it up in wmstart too.
+        if ([Environment]::GetEnvironmentVariable('RUST_BACKTRACE', 'User') -ne 'full') {
+            [Environment]::SetEnvironmentVariable('RUST_BACKTRACE', 'full', 'User')
+            $env:RUST_BACKTRACE = 'full'
+            Write-Host 'Set RUST_BACKTRACE=full (User scope) for komorebi crash traces. Reboot or relaunch komorebi to apply.' -ForegroundColor Yellow
+        }
         # Autostart komorebi together with whkd (keybindings). The status bar is Yasb, started
         # separately by Set-WinWorkstationYasbSettings; no --bar flag here.
         komorebic enable-autostart --whkd
@@ -2348,6 +2358,9 @@ function Start-WinWindowManager {
         return
     }
 
+    # Ensure this komorebi inherits a full backtrace even before the persistent User var applies
+    # (new shells relog into it; this covers a wmstart in the current session).
+    $env:RUST_BACKTRACE = 'full'
     # No --bar: Yasb is the status bar. Start it alongside komorebi so the rice comes up together.
     komorebic start --whkd --clean-state
     if (Get-Command yasbc -ErrorAction SilentlyContinue) {
@@ -2402,6 +2415,71 @@ function Invoke-WinWindowManagerCommand {
 
     & $komorebic.Source @Arguments
     $LASTEXITCODE -eq 0
+}
+
+function Save-WinWindowManagerDiagnostics {
+    # Snapshot komorebi's state the moment it freezes. A WM-lock hang does not panic, so
+    # RUST_BACKTRACE alone captures nothing for it -- this grabs the live evidence instead:
+    # `komorebic state`, the process/thread picture, and the tail of today's logs. `komorebic
+    # state` talks to the (possibly deadlocked) komorebi over a named pipe and can itself block,
+    # so it runs as a job with a timeout and is recorded as "TIMED OUT (process wedged)" on hang
+    # -- which is itself a useful signal. Run `wmdiag` as soon as the freeze happens.
+    [CmdletBinding()]
+    param([int]$TimeoutSeconds = 8)
+
+    $komorebic = Get-Command komorebic -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+    if (-not $komorebic) {
+        Write-Warning 'komorebic is not installed or not on PATH.'
+        return
+    }
+
+    $stamp = Get-Date -Format 'yyyy-MM-dd_HHmmss'
+    $outDir = Join-Path $WinWorkstationKomorebiDiagRoot $stamp
+    New-Item -ItemType Directory -Path $outDir -Force -ErrorAction SilentlyContinue | Out-Null
+
+    # Any komorebic subcommand can block on a wedged process; run each in a job we can time out.
+    function Invoke-KomorebicWithTimeout {
+        param([string[]]$Args, [string]$OutFile, [int]$Seconds)
+        $job = Start-Job -ScriptBlock { param($exe, $a) & $exe @a 2>&1 } -ArgumentList $komorebic.Source, $Args
+        if (Wait-Job $job -Timeout $Seconds) {
+            Receive-Job $job | Out-File -FilePath $OutFile -Encoding utf8
+            $verdict = 'ok'
+        }
+        else {
+            "TIMED OUT after ${Seconds}s (komorebi process appears wedged -- this is itself diagnostic: the WM lock is held)." |
+                Out-File -FilePath $OutFile -Encoding utf8
+            $verdict = 'timeout'
+        }
+        Remove-Job $job -Force -ErrorAction SilentlyContinue
+        $verdict
+    }
+
+    $stateVerdict = Invoke-KomorebicWithTimeout -Args @('state') -OutFile (Join-Path $outDir 'state.json') -Seconds $TimeoutSeconds
+    [void](Invoke-KomorebicWithTimeout -Args @('query', 'focused-monitor-index') -OutFile (Join-Path $outDir 'focused-monitor.txt') -Seconds $TimeoutSeconds)
+    [void](Invoke-KomorebicWithTimeout -Args @('check') -OutFile (Join-Path $outDir 'check.txt') -Seconds $TimeoutSeconds)
+
+    # Process + thread picture (never blocks): confirms whether komorebi/whkd are alive and pegged.
+    Get-Process -Name komorebi, komorebi-bar, whkd, yasb -ErrorAction SilentlyContinue |
+        Select-Object Name, Id, CPU, Threads, StartTime, Responding, PagedMemorySize64 |
+        Format-List | Out-File -FilePath (Join-Path $outDir 'processes.txt') -Encoding utf8
+
+    # Copy the tail of today's komorebi logs (the abrupt end is where the hang lands).
+    $logDir = Join-Path $env:LOCALAPPDATA 'Temp'
+    Get-ChildItem -Path $logDir -Filter 'komorebi*.log*' -ErrorAction SilentlyContinue |
+        Sort-Object LastWriteTime -Descending | Select-Object -First 3 | ForEach-Object {
+            Get-Content $_.FullName -Tail 400 -ErrorAction SilentlyContinue |
+                Out-File -FilePath (Join-Path $outDir "tail-$($_.Name).log") -Encoding utf8
+        }
+
+    "komorebic version:" | Out-File -FilePath (Join-Path $outDir 'version.txt') -Encoding utf8
+    [void](Invoke-KomorebicWithTimeout -Args @('--version') -OutFile (Join-Path $outDir 'version.txt') -Seconds $TimeoutSeconds)
+
+    $color = if ($stateVerdict -eq 'timeout') { 'Red' } else { 'Green' }
+    Write-Host "komorebi diagnostics saved: $outDir" -ForegroundColor $color
+    if ($stateVerdict -eq 'timeout') {
+        Write-Host 'komorebic state TIMED OUT -- the WM lock is held (deadlock confirmed). Attach state.json + tail-*.log to an upstream issue.' -ForegroundColor Red
+    }
+    $outDir
 }
 
 function Set-WinWindowManagerDevIntent {
@@ -2496,3 +2574,4 @@ Set-Alias -Name wmdev -Value Set-WinWindowManagerDevIntent -Force
 Set-Alias -Name wmbrowse -Value Set-WinWindowManagerBrowseIntent -Force
 Set-Alias -Name wmfocus -Value Set-WinWindowManagerFocusIntent -Force
 Set-Alias -Name wmreset -Value Reset-WinWindowManagerLayout -Force
+Set-Alias -Name wmdiag -Value Save-WinWindowManagerDiagnostics -Force
