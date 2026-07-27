@@ -84,6 +84,7 @@ function Test-WinDotfilesConfig {
         @{ Rel = 'komorebi\komorebi.bar.json'; Kind = 'Json' }
         @{ Rel = 'packages\scoop.json'; Kind = 'Json' }
         @{ Rel = 'packages\winget.json'; Kind = 'Json' }
+        @{ Rel = 'powershell\apps.json'; Kind = 'Json' }
         @{ Rel = 'terminal\windows-terminal\settings.json'; Kind = 'Jsonc' }
         @{ Rel = 'vscode\settings.json'; Kind = 'Jsonc' }
         @{ Rel = 'fastfetch\config.jsonc'; Kind = 'Jsonc' }
@@ -313,7 +314,7 @@ function Test-WinDotfiles {
         'verify', 'awslambda', 'awslogs', 'fbdeploy', 'fbemu', 'stripelisten',
         'stripetrigger', 'histdoctor', 'workon', 'cmds', 'mycmds', 'gitlocks', 'gunlock',
         'projcache', 'profileperf', 'wincheck', 'winsmooth', 'wmstart', 'wmstop', 'wmcheck',
-        'wmdev', 'wmbrowse', 'wmfocus', 'wmreset'
+        'wmdev', 'wmbrowse', 'wmfocus', 'wmreset', 'raise', 'apps'
     )
     $projectGroupCommands = Get-ProjectGroups | ForEach-Object Command
     $requiredProfileCommands = @($baseProfileCommands + $projectGroupCommands) | Where-Object { $_ } | Select-Object -Unique

@@ -169,8 +169,17 @@ profile's commands and `aliastips` lists its shortcuts.
     are read from env vars so nothing project-specific is committed: `WEZTERM_GH_REPO` (`#123` →
     GitHub issue), `WEZTERM_GIT_REPO` (hash → commit), `WEZTERM_ADO_BASE` (`AB#123` → ADO work
     item). `ctrl+shift+space` quick-selects hashes and `file:line` locations without a link.
+  - **Shell integration** — `powershell/profile.d/47-wezterm.ps1` emits OSC 7 (cwd), OSC 133
+    (prompt/output zones) and OSC 1337 user vars when the shell is running inside WezTerm, and
+    no-ops everywhere else. That buys `shift+up`/`shift+down` to jump between prompts in the
+    scrollback, triple-click to select a whole command's output however far it wrapped, exact cwd
+    inheritance for new tabs/splits, and tab titles that name the command a tab is *running*
+    (`git`, `npm`) instead of `pwsh`. Disable with `WINDOTFILES_WEZTERM_INTEGRATION=off`.
   - **OS auto light/dark** — when Windows switches to light mode, the theme-managed (dark) scheme
     is overridden with a light counterpart; dark mode leaves the `theme`-set scheme authoritative.
+  - **Chrome that gets out of the way** — the scrollbar appears only when there is scrollback to
+    scroll and you aren't inside a full-screen TUI, inactive panes dim, and `ctrl+shift+k` opens
+    the command palette (its stock `ctrl+shift+p` binding belongs to the project switcher here).
 - Both terminals carry a **subtle acrylic frost** that echoes the frosted Yasb bars and komorebi
   borders, kept conservative so text stays crisp: Windows Terminal uses `useAcrylic` at `opacity`
   95; WezTerm uses `win32_system_backdrop = 'Acrylic'` at `window_background_opacity` 0.94.
@@ -227,7 +236,7 @@ The whole system is themed from a single palette so the terminal, prompt, window
 - `theme` shows the active theme and the available ones; `theme list` lists them.
 - `theme dracula` switches everything live: Windows Terminal colors, WezTerm color scheme, the Starship palette, komorebi borders, the Yasb status bar, VSCode's workbench chrome, Spotify (via Spicetify), Flow Launcher, the Nilesoft Shell context menu, and the Windows accent color + wallpaper. komorebi reloads in place and Yasb hot-reloads (its `styles.css` `:root` block is rewritten from the theme's `YasbPalette`); Windows Terminal/WezTerm/Starship pick up on save / next prompt.
 - `theme nord -NoApply` rewrites the config files without touching the running system (useful in setup/CI).
-- Shipped themes: **ashes** (default, the muted Base16 look), **dracula**, **nord**, **mocha** (Catppuccin Mocha), **gruvbox** (warm retro amber/orange), **gruvbox-material** (Gruvbox Material Dark Soft — a lower-contrast, single cream-accent variant of **gruvbox**), **rosepine** (Rosé Pine — warm plum/rose/gold), and **latte** (Catppuccin Latte — the one light theme; sets a theme's optional `IsLight` key so `theme latte` also flips Windows into light mode, not just the app palette).
+- Shipped themes: **ashes** (default, the muted Base16 look), **dracula**, **nord**, **mocha** (Catppuccin Mocha), **gruvbox** (warm retro amber/orange), **gruvbox-material** (Gruvbox Material Dark Soft — a lower-contrast, single cream-accent variant of **gruvbox**), **everforest** (Everforest Dark Soft — the green sibling of **gruvbox-material**: same low-contrast feel on a blue-green base with a sage accent), **rosepine** (Rosé Pine — warm plum/rose/gold), and **latte** (Catppuccin Latte — the one light theme; sets a theme's optional `IsLight` key so `theme latte` also flips Windows into light mode, not just the app palette).
 - **VSCode**: the `vscode/settings.json` overlay carries a marked `workbench.colorCustomizations` block that `theme` rewrites from the palette's `YasbPalette` (no theme extension required — only the editor *chrome* is recolored; syntax highlighting stays on whatever color theme you pick). `winsmooth -Apply` deep-merges the overlay into the live `%APPDATA%\Code\User\settings.json`, preserving your other settings; VSCode watches the file, so the chrome repaints instantly. Skip with `-SkipVSCode`.
 - **Spotify**: `spicetify/win-dotfiles/` is a Spicetify theme with a `color.ini` section per palette plus a minimal `user.css`. `theme` (and `winsmooth -Apply`) point Spotify at the matching scheme via `tools/Apply-Spicetify.ps1` and run `spicetify apply`. Install Spicetify with `scoop install spicetify-cli` (in `packages/scoop.json`); the first time, run `spicetify backup apply` once (or `tools/Apply-Spicetify.ps1 -FirstRun`). It's a safe no-op when Spicetify/Spotify aren't installed. Skip with `-SkipSpicetify`.
 - Desktop accent + wallpaper changes are captured in the `winsmooth` backup manifest, so `winsmooth -RestoreLast` reverts them.
@@ -264,6 +273,45 @@ The whole system is themed from a single palette so the terminal, prompt, window
 - `wmstop` stops `komorebi` and `whkd` (restoring hidden windows) and stops the Yasb bar.
 - Intent hotkeys: `Alt+Shift+D` DEV, `Alt+Shift+W` browser columns, `Alt+Shift+F` focus/monocle, `Alt+Shift+Z` reset config and retile.
 - Layout hotkeys: `Alt+Shift+U` main-stack, `Alt+Shift+C` columns, `Alt+Shift+G` grid, `Alt+Shift+B` BSP, `Alt+Shift+S` stack all. Stackbars show only on stacks with compact title labels.
+
+### Raise or launch
+
+The Hyprland habit of "focus it if it's already open, otherwise start it", ported to Windows.
+`Win+B` goes to the browser you already have rather than opening a second one; press it again to
+cycle that app's other windows. `raise browser` does the same thing from the shell.
+
+| Key | App |
+| --- | --- |
+| `Win+B` | browser (Chrome) |
+| `Win+C` | VS Code |
+| `Win+T` | terminal (WezTerm, else Windows Terminal) |
+| `Win+M` | Teams |
+| `Win+Y` | YouTube Music |
+| `Win+E` | File Explorer |
+
+- The apps and their launch commands live in `powershell/apps.json`; add machine-specific ones to
+  the gitignored `powershell/apps.local.json`, which is merged over the committed set so it only
+  has to carry what it changes. `apps` lists what's registered. Entries match on executable name
+  and can add a `title` regex when one exe serves several apps; packaged apps that reinstall into
+  versioned directories (Slack, YouTube Music) launch via a stable `shell:AppsFolder\…` ID.
+- `raise <name>` accepts a name, an alias, or an unambiguous prefix (`raise brow`), and falls back
+  to treating an unknown `something.exe` as an ad-hoc match. `-NoLaunch` raises without ever
+  starting the app, `-NoCycle` pins to the first match, and `-Exe`/`-Title` match windows directly
+  without a registry entry.
+- Window discovery goes through `komorebic state`, so a match on an inactive workspace is reached
+  by focusing that workspace first, and a window buried in a stack is surfaced with
+  `focus-stack-window` rather than by handle — both cases a plain `SetForegroundWindow` cannot
+  reach, because komorebi hides those windows. Without komorebi running it degrades to
+  `Get-Process` main windows, which only sees one window per process.
+- `Win+<letter>` rather than `Alt+<letter>` because whkd grabs a combo globally: an `Alt+F`
+  binding would shadow the File menu in every app. These do override the Windows defaults for the
+  same keys (`Win+E` still opens Explorer, just via raise-or-launch).
+- The hotkeys and the shell command run the same `tools/Raise-App.ps1`, so they can't disagree
+  about what `browser` means. whkd pipes bindings into one long-lived PowerShell session rather
+  than spawning a process per keypress, so the script's interop type is compiled once per whkd
+  session and a warm press costs about 70 ms. That is also why it stays Windows PowerShell 5.1
+  compatible and never touches the profile.
+- Editing `komorebi/whkdrc` needs a whkd reload (`Alt+O`) before new bindings take effect.
 
 ## Status bar (Yasb)
 

@@ -23,10 +23,18 @@ config.window_background_opacity = 0.94
 config.win32_system_backdrop = 'Acrylic'
 -- Extra top padding so terminal content isn't crammed right up against the tab/status bar.
 config.window_padding = { left = 10, right = 10, top = 18, bottom = 8 }
+-- Base off; update-right-status turns it on per-window only when there is scrollback to scroll
+-- and we're not inside a full-screen TUI.
 config.enable_scroll_bar = false
 config.scrollback_lines = 10000
 config.audible_bell = 'Disabled'
 config.default_cursor_style = 'SteadyBlock'
+config.max_fps = 120
+-- Dim the panes you aren't typing in, so the active split is obvious without a border.
+config.inactive_pane_hsb = { brightness = 0.9 }
+config.switch_to_last_active_tab_when_closing_tab = true
+-- The status bar shells out (git); repaint it every 5s instead of every second.
+config.status_update_interval = 5000
 
 -- Tabs: the bar stays visible even with one tab so the right-status line (workspace, project,
 -- git branch, battery, clock) is always shown. The fancy tab bar is used for its built-in
@@ -34,11 +42,29 @@ config.default_cursor_style = 'SteadyBlock'
 config.hide_tab_bar_if_only_one_tab = false
 config.use_fancy_tab_bar = true
 config.tab_bar_at_bottom = false
-config.tab_max_width = 28
+local TAB_MAX_WIDTH = 28
+config.tab_max_width = TAB_MAX_WIDTH
 
 -- Color scheme: a WezTerm built-in, rewritten by `theme set <name>` (themes/<name>.psd1
 -- WeztermScheme). Keep the trailing marker comment intact so the switcher can find this line.
-config.color_scheme = 'rose-pine' -- win-dotfiles:theme
+config.color_scheme = 'Everforest Dark Soft' -- win-dotfiles:theme
+
+-- Everforest Dark Soft isn't among this WezTerm build's built-ins (only the darker Gogh
+-- variant), so ship it inline; custom color_schemes entries resolve by name like built-ins.
+-- Values mirror themes/everforest.psd1 and the Windows Terminal scheme of the same name.
+config.color_schemes = {
+  ['Everforest Dark Soft'] = {
+    background = '#333c43',
+    foreground = '#d3c6aa',
+    cursor_bg = '#d3c6aa',
+    cursor_fg = '#333c43',
+    cursor_border = '#d3c6aa',
+    selection_bg = '#434f55',
+    selection_fg = '#d3c6aa',
+    ansi = { '#333c43', '#e67e80', '#a7c080', '#dbbc7f', '#7fbbb3', '#d699b6', '#83c092', '#d3c6aa' },
+    brights = { '#859289', '#e67e80', '#a7c080', '#dbbc7f', '#7fbbb3', '#d699b6', '#83c092', '#f2efdf' },
+  },
+}
 
 -- OS auto light/dark: when Windows is in light mode, override the theme-managed (dark) scheme
 -- with a light counterpart. Dark mode leaves the marker scheme untouched, so `theme set` stays
@@ -53,6 +79,7 @@ local light_for = {
   ['Gruvbox dark, medium (base16)'] = 'Gruvbox light, medium (base16)',
   ['Gruvbox Material (Gogh)'] = 'Gruvbox light, medium (base16)',
   ['Ashes (base16)'] = 'Catppuccin Latte',
+  ['Everforest Dark Soft'] = 'Everforest Light (Gogh)',
 }
 do
   local ok, appearance = pcall(function() return wezterm.gui.get_appearance() end)
@@ -66,7 +93,8 @@ end
 
 -- Resolve the active scheme's colors at load time so the tab bar chrome matches it. (The status
 -- bar reads the live palette at render time below, so it also re-tints on `theme set` reloads.)
-local scheme = wezterm.color.get_builtin_schemes()[config.color_scheme] or {}
+local scheme = (config.color_schemes or {})[config.color_scheme]
+  or wezterm.color.get_builtin_schemes()[config.color_scheme] or {}
 local s_bg = scheme.background or '#1e1e2e'
 local s_fg = scheme.foreground or '#cdd6f4'
 local s_ansi = scheme.ansi or {}
@@ -84,6 +112,11 @@ config.colors = {
     new_tab_hover = { bg_color = s_bg, fg_color = s_fg },
   },
 }
+
+-- The command palette defaults to its own colors; pull it into the active scheme. (Its stock
+-- ctrl+shift+p binding is taken by the project switcher below, so it's rebound there too.)
+config.command_palette_bg_color = s_bg
+config.command_palette_fg_color = s_fg
 
 -- Fancy tab bar frame: match the scheme background and give the bar a little more height/padding
 -- than the retro bar so tabs and the status pills aren't jammed against the top edge.
@@ -122,13 +155,17 @@ local function cwd_path(pane)
   return (p:gsub('^/(%a:)', '%1'))
 end
 
--- Current git branch, cached by cwd and refreshed periodically so the status bar doesn't shell
--- out on every repaint. Fails silently to '' when cwd isn't a repo.
-local branch_state = { cwd = nil, branch = '', n = 0 }
+-- Current git branch, cached by cwd and refreshed on a wall-clock interval so the status bar
+-- doesn't shell out on every repaint. Counting repaints instead would be unpredictable:
+-- update-status also fires on resize, focus change and theme switch, not just on the interval.
+-- Fails silently to '' when cwd isn't a repo.
+local BRANCH_TTL_SECONDS = 10
+local branch_state = { cwd = nil, branch = '', checked_at = 0 }
 local function git_branch(cwd)
-  branch_state.n = branch_state.n + 1
-  if cwd ~= branch_state.cwd or branch_state.n % 15 == 0 then
+  local now = os.time()
+  if cwd ~= branch_state.cwd or (now - branch_state.checked_at) >= BRANCH_TTL_SECONDS then
     branch_state.cwd = cwd
+    branch_state.checked_at = now
     local ok, success, stdout = pcall(wezterm.run_child_process,
       { 'git', '-C', cwd, 'rev-parse', '--abbrev-ref', 'HEAD' })
     if ok and success and stdout then
@@ -212,16 +249,53 @@ local function project_switcher(window, pane)
 end
 
 -- ---------------------------------------------------------------------------
--- Tab titles: clean, padded, index + process/cwd (retro tab bar).
+-- Tab titles: index + whatever is actually interesting about the tab.
 -- ---------------------------------------------------------------------------
 
-wezterm.on('format-tab-title', function(tab, _tabs, _panes, _cfg, _hover, _max_width)
+-- A pane title of 'pwsh' tells you nothing — every tab says it. When the pane is sitting on a
+-- shell we'd rather name the command it's running; when it isn't (nvim, ssh, a TUI that sets its
+-- own title) the pane title is the better answer.
+local KNOWN_SHELLS = {
+  pwsh = true, powershell = true, cmd = true, bash = true, zsh = true,
+  fish = true, sh = true, nu = true, wsl = true,
+}
+
+local function strip_exe(s)
+  return (s:gsub('%.[eE][xX][eE]$', ''))
+end
+
+wezterm.on('format-tab-title', function(tab, _tabs, _panes, _cfg, _hover, max_width)
   local title = tab.tab_title
+
   if not title or title == '' then
-    title = tab.active_pane and tab.active_pane.title or 'shell'
+    local pane = tab.active_pane or {}
+    -- WEZTERM_CMD is set by the shell integration in powershell/profile.d/47-wezterm.ps1 and
+    -- holds the command currently running (empty at an idle prompt).
+    local user_vars = pane.user_vars or {}
+    local cmd = user_vars.WEZTERM_CMD or ''
+    local pane_title = pane.title or ''
+    local proc = pane.foreground_process_name or ''
+    proc = proc ~= '' and strip_exe(basename(proc)) or ''
+    local is_shell = KNOWN_SHELLS[strip_exe(basename(pane_title)):lower()] or false
+
+    if cmd ~= '' and (pane_title == '' or is_shell) then
+      title = cmd
+    elseif pane_title ~= '' and not is_shell then
+      title = pane_title
+    elseif proc ~= '' then
+      title = proc
+    else
+      title = pane_title
+    end
   end
-  title = title:gsub('%.exe$', ''):gsub('%s+$', '')
-  return ' ' .. (tab.tab_index + 1) .. '  ' .. title .. ' '
+
+  title = strip_exe(title):gsub('%s+$', '')
+  if title == '' then title = 'shell' end
+
+  -- Truncate ourselves so a long title (a full ssh command, a deep path) can't blow past the
+  -- space the tab bar actually has; -2 leaves room for the padding spaces added back below.
+  local label = (tab.tab_index + 1) .. '  ' .. title
+  return ' ' .. wezterm.truncate_right(label, math.max(1, (max_width or TAB_MAX_WIDTH) - 2)) .. ' '
 end)
 
 -- ---------------------------------------------------------------------------
@@ -277,6 +351,21 @@ wezterm.on('update-right-status', function(window, pane)
   pill(bright[1] or '#6272a4', ICON_CLOCK, wezterm.strftime '%H:%M')
 
   window:set_right_status(wezterm.format(cells))
+
+  -- Show the scrollbar only when there is scrollback to scroll and we're not inside a
+  -- full-screen TUI (nvim, fzf, lazygit) — the alt screen has no scrollback of its own, so the
+  -- bar there is both useless and a visual distraction. Only push overrides on an actual change;
+  -- set_config_overrides reconfigures the window.
+  local want_bar = false
+  local ok_dims, dims = pcall(function() return pane:get_dimensions() end)
+  if ok_dims and dims then
+    want_bar = dims.scrollback_rows > dims.viewport_rows and not pane:is_alt_screen_active()
+  end
+  local overrides = window:get_config_overrides() or {}
+  if overrides.enable_scroll_bar ~= want_bar then
+    overrides.enable_scroll_bar = want_bar
+    window:set_config_overrides(overrides)
+  end
 end)
 
 -- ---------------------------------------------------------------------------
@@ -328,6 +417,22 @@ config.keys = {
   { key = 'p', mods = 'CTRL|SHIFT', action = wezterm.action_callback(project_switcher) },
   -- Fuzzy-switch between already-open workspaces.
   { key = 's', mods = 'CTRL|SHIFT', action = act.ShowLauncherArgs { flags = 'FUZZY|WORKSPACES' } },
+  -- The stock ctrl+shift+p palette binding is taken by the project switcher above.
+  { key = 'k', mods = 'CTRL|SHIFT', action = act.ActivateCommandPalette },
+  -- Jump between prompts in the scrollback. Needs the OSC 133 marks emitted by
+  -- powershell/profile.d/47-wezterm.ps1; without shell integration these do nothing.
+  { key = 'UpArrow', mods = 'SHIFT', action = act.ScrollToPrompt(-1) },
+  { key = 'DownArrow', mods = 'SHIFT', action = act.ScrollToPrompt(1) },
+}
+
+-- Triple-click selects the whole semantic zone under the cursor — i.e. one command's entire
+-- output, however many lines it wrapped to, instead of the single visual line. Also OSC 133.
+config.mouse_bindings = {
+  {
+    event = { Down = { streak = 3, button = 'Left' } },
+    mods = 'NONE',
+    action = act.SelectTextAtMouseCursor 'SemanticZone',
+  },
 }
 
 return config

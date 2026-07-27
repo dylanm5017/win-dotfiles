@@ -180,9 +180,9 @@
   "border_style": "Rounded",
   "theme": {
     "palette": "Base16",
-    "name": "RosePine",
+    "name": "Everforest",
     "unfocused_border": "Base03",
-    "bar_accent": "Base0E"
+    "bar_accent": "Base0B"
   },
   "stackbar": {
     "mode": "OnStack",

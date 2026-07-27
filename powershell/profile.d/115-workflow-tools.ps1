@@ -942,6 +942,8 @@ function Get-WinDotfilesCommandCatalog {
         New-WinDotfilesCommandInfo 'Window Manager' 'wmreset' 'Reload the repo komorebi config and retile to clear layout quirks.' 'wmreset'
         New-WinDotfilesCommandInfo 'Window Manager' 'wmstart' 'Start komorebi with whkd using the repo-backed config.' 'wmstart'
         New-WinDotfilesCommandInfo 'Window Manager' 'wmstop' 'Stop komorebi and whkd, restoring hidden windows.' 'wmstop'
+        New-WinDotfilesCommandInfo 'Window Manager' 'raise' 'Focus an app that is already open instead of starting a second copy; repeat to cycle its windows.' 'raise browser'
+        New-WinDotfilesCommandInfo 'Window Manager' 'apps' 'List the raise-or-launch app registry.' 'apps'
 
         New-WinDotfilesCommandInfo 'Theming' 'theme' 'Reskin terminal, prompt, komorebi, and the Windows desktop from one palette (ashes/dracula/nord/mocha).' 'theme dracula'
 

@@ -19,3 +19,4 @@ Modules/Microsoft.WinGet.*/
 .env.*
 powershell/profile.local.ps1
 powershell/projects.local.json
+powershell/apps.local.json

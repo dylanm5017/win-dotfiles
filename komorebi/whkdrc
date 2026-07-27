@@ -9,8 +9,19 @@ alt + i                 : komorebic toggle-shortcuts
 # App shortcuts
 # Launch terminal (WezTerm if installed, else Windows Terminal). Tiling-WM muscle memory.
 alt + return            : if (Get-Command wezterm -ErrorAction SilentlyContinue) { Start-Process wezterm-gui } else { Start-Process wt }
-# alt + f                 : if ($wshell.AppActivate('Firefox') -eq $False) { start firefox }
-# alt + b                 : if ($wshell.AppActivate('Chrome') -eq $False) { start chrome }
+
+# Raise-or-launch, the Hyprland way: focus the app if it is already open (switching workspace and
+# unburying it from a stack as needed), else start it. Pressing again cycles that app's other
+# windows. Apps and their launch commands live in powershell/apps.json.
+#
+# win + <letter> rather than alt: whkd grabs a combo globally, so an alt binding here would shadow
+# the File/Edit menu of every app. These override the Windows defaults for the same keys.
+win + b                 : & 'C:\Workspace\Projects\win-dotfiles\tools\Raise-App.ps1' browser
+win + c                 : & 'C:\Workspace\Projects\win-dotfiles\tools\Raise-App.ps1' code
+win + t                 : & 'C:\Workspace\Projects\win-dotfiles\tools\Raise-App.ps1' terminal
+win + m                 : & 'C:\Workspace\Projects\win-dotfiles\tools\Raise-App.ps1' teams
+win + y                 : & 'C:\Workspace\Projects\win-dotfiles\tools\Raise-App.ps1' music
+win + e                 : & 'C:\Workspace\Projects\win-dotfiles\tools\Raise-App.ps1' files
 
 alt + q                 : komorebic close
 alt + m                 : komorebic minimize

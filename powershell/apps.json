@@ -1,0 +1,51 @@
+{
+  "apps": [
+    {
+      "name": "browser",
+      "aliases": ["chrome", "web"],
+      "exe": ["chrome.exe"],
+      "launch": ["chrome.exe"]
+    },
+    {
+      "name": "code",
+      "aliases": ["editor", "vscode"],
+      "exe": ["Code.exe"],
+      "launch": ["code.exe"]
+    },
+    {
+      "name": "terminal",
+      "aliases": ["term"],
+      "exe": ["wezterm-gui.exe", "WindowsTerminal.exe"],
+      "launch": ["wezterm-gui.exe", "wt.exe"]
+    },
+    {
+      "name": "teams",
+      "aliases": ["chat"],
+      "exe": ["ms-teams.exe"],
+      "launch": ["ms-teams.exe"]
+    },
+    {
+      "name": "music",
+      "aliases": ["ytm"],
+      "exe": ["youtube-music-desktop-app.exe"],
+      "launch": ["shell:AppsFolder\\com.squirrel.youtube_music_desktop_app.youtube-music-desktop-app"]
+    },
+    {
+      "name": "files",
+      "aliases": ["explorer"],
+      "exe": ["explorer.exe"],
+      "launch": ["explorer.exe"]
+    },
+    {
+      "name": "firefox",
+      "aliases": ["ff"],
+      "exe": ["firefox.exe"],
+      "launch": ["firefox.exe"]
+    },
+    {
+      "name": "slack",
+      "exe": ["slack.exe"],
+      "launch": ["shell:AppsFolder\\com.squirrel.slack.slack"]
+    }
+  ]
+}

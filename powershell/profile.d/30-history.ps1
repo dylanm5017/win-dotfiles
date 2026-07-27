@@ -22,6 +22,17 @@ if (Get-Module PSReadLine) {
             Write-Verbose "Alias tip skipped: $($_.Exception.Message)"
         }
 
+        # WezTerm's OSC 133 command-start mark + WEZTERM_CMD user var (47-wezterm). Defined only
+        # inside WezTerm, so this is a no-op everywhere else.
+        try {
+            if ($global:WinDotfilesWezTerm) {
+                Write-WinDotfilesWezExec -Line $line
+            }
+        }
+        catch {
+            Write-Verbose "WezTerm exec mark skipped: $($_.Exception.Message)"
+        }
+
         if ($line -match '(?i)password|secret|token|apikey|api[_-]?key|connectionstring|-AsPlainText') {
             # Usable for the rest of the session, but never written to the history file.
             return [Microsoft.PowerShell.AddToHistoryOption]::MemoryOnly

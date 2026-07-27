@@ -5,6 +5,7 @@ $ProfileScripts = @(
     '30-history.ps1'
     '40-prompt.ps1'
     '45-theme.ps1'
+    '47-wezterm.ps1'
     '48-fzf.ps1'
     '50-navigation.ps1'
     '60-aliases.ps1'
@@ -18,6 +19,7 @@ $ProfileScripts = @(
     '130-completions.ps1'
     '140-reliability.ps1'
     '150-workstation.ps1'
+    '155-raise.ps1'
     '160-projects.ps1'
     '170-greeting.ps1'
 )

@@ -20,13 +20,13 @@
     </ResourceDictionary.MergedDictionaries>
 
     <!-- win-dotfiles:theme:start -->
-    <SolidColorBrush x:Key="wdBg" Color="#191724" />
-    <SolidColorBrush x:Key="wdSurface" Color="#1f1d2e" />
-    <SolidColorBrush x:Key="wdSurfaceAlt" Color="#26233a" />
-    <SolidColorBrush x:Key="wdText" Color="#e0def4" />
-    <SolidColorBrush x:Key="wdSubtext" Color="#908caa" />
-    <SolidColorBrush x:Key="wdAccent" Color="#ebbcba" />
-    <SolidColorBrush x:Key="ItemSelectedBackgroundColor" Color="#1f1d2e" />
+    <SolidColorBrush x:Key="wdBg" Color="#333C43" />
+    <SolidColorBrush x:Key="wdSurface" Color="#3A464C" />
+    <SolidColorBrush x:Key="wdSurfaceAlt" Color="#434F55" />
+    <SolidColorBrush x:Key="wdText" Color="#D3C6AA" />
+    <SolidColorBrush x:Key="wdSubtext" Color="#859289" />
+    <SolidColorBrush x:Key="wdAccent" Color="#A7C080" />
+    <SolidColorBrush x:Key="ItemSelectedBackgroundColor" Color="#3A464C" />
     <!-- win-dotfiles:theme:end -->
 
     <Thickness x:Key="ResultMargin">0 0 0 4</Thickness>
