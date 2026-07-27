@@ -72,9 +72,20 @@ function Set-WinDotfilesFileContent {
 }
 
 function New-WinDotfilesKomorebiThemeBlock {
+    # Keys absent from the theme hashtable are skipped (Base16/Catppuccin themes have `name`,
+    # Custom themes have a nested `colours` object instead), so both shapes share one renderer.
     param([Parameter(Mandatory)]$Theme, [Parameter(Mandatory)][string[]]$Order)
 
-    $lines = foreach ($k in $Order) { '    "{0}": "{1}"' -f $k, $Theme[$k] }
+    $lines = foreach ($k in $Order) {
+        if (-not $Theme.Contains($k)) { continue }
+        $v = $Theme[$k]
+        if ($v -is [hashtable]) {
+            # base_00..base_0f sort correctly as strings.
+            $inner = foreach ($ck in ($v.Keys | Sort-Object)) { '      "{0}": "{1}"' -f $ck, $v[$ck] }
+            ('    "{0}": {{' -f $k) + "`n" + ($inner -join ",`n") + "`n    }"
+        }
+        else { '    "{0}": "{1}"' -f $k, $v }
+    }
     "`"theme`": {`n" + ($lines -join ",`n") + "`n  }"
 }
 
@@ -293,14 +304,15 @@ function Update-WinDotfilesThemeConfigFiles {
         -Pattern '(?m)^palette = "[^"]*"' `
         -Replacement ('palette = "{0}"' -f $Theme.StarshipPalette)
 
-    # komorebi window manager + bar: rewrite the native theme block.
+    # komorebi window manager + bar: rewrite the native theme block. The pattern tolerates one
+    # level of nested braces so Custom-palette blocks (with a `colours` object) round-trip.
     Set-WinDotfilesFileContent -Path $komorebi `
-        -Pattern '"theme"\s*:\s*\{.*?\}' `
-        -Replacement (New-WinDotfilesKomorebiThemeBlock -Theme $Theme.KomorebiTheme -Order @('palette', 'name', 'unfocused_border', 'bar_accent'))
+        -Pattern '"theme"\s*:\s*\{(?:[^{}]|\{[^{}]*\})*\}' `
+        -Replacement (New-WinDotfilesKomorebiThemeBlock -Theme $Theme.KomorebiTheme -Order @('palette', 'name', 'colours', 'unfocused_border', 'bar_accent'))
 
     Set-WinDotfilesFileContent -Path $komorebiBar `
-        -Pattern '"theme"\s*:\s*\{.*?\}' `
-        -Replacement (New-WinDotfilesKomorebiThemeBlock -Theme $Theme.BarTheme -Order @('palette', 'name', 'accent'))
+        -Pattern '"theme"\s*:\s*\{(?:[^{}]|\{[^{}]*\})*\}' `
+        -Replacement (New-WinDotfilesKomorebiThemeBlock -Theme $Theme.BarTheme -Order @('palette', 'name', 'colours', 'accent'))
 
     # Yasb status bar: rewrite the marked :root block in styles.css. Yasb hot-reloads on save
     # (the file is symlinked to ~/.config/yasb/styles.css), so the bar repaints live.
@@ -385,6 +397,19 @@ function Set-WinDotfilesTheme {
     finally {
         if ($manifest -and (Test-Command Save-WinWorkstationBackupManifest)) {
             Save-WinWorkstationBackupManifest -Manifest $manifest
+        }
+    }
+
+    # Claude Code: flip its UI theme (diff colors etc.) to match light/dark, preserving any
+    # -daltonized/-ansi variant suffix. Running sessions only repaint on restart.
+    $claudeSettings = Join-Path $HOME '.claude\settings.json'
+    if (Test-Path -LiteralPath $claudeSettings -PathType Leaf) {
+        $mode = if ($theme.IsLight) { 'light' } else { 'dark' }
+        $raw = Get-Content -LiteralPath $claudeSettings -Raw
+        $updated = [regex]::new('"theme"\s*:\s*"(?:dark|light)([^"]*)"').Replace($raw, ('"theme": "{0}$1"' -f $mode), 1)
+        if ($updated -ne $raw) {
+            Set-Content -LiteralPath $claudeSettings -Value $updated -NoNewline -Encoding utf8
+            Write-Host "Claude Code theme -> $mode (running sessions repaint on restart)." -ForegroundColor DarkGray
         }
     }
 

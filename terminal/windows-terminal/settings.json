@@ -196,6 +196,29 @@
             "brightWhite": "#F2EFDF"
         },
         {
+            "name": "Everforest Light Soft",
+            "background": "#F3EAD3",
+            "foreground": "#5C6A72",
+            "cursorColor": "#5C6A72",
+            "selectionBackground": "#DDD8BE",
+            "black": "#7A8478",
+            "red": "#E67E80",
+            "green": "#8DA666",
+            "yellow": "#C1A266",
+            "blue": "#72AEA6",
+            "purple": "#C98CA9",
+            "cyan": "#76B385",
+            "white": "#A5A292",
+            "brightBlack": "#99A393",
+            "brightRed": "#F85552",
+            "brightGreen": "#8DA101",
+            "brightYellow": "#DFA000",
+            "brightBlue": "#3A94C5",
+            "brightPurple": "#DF69BA",
+            "brightCyan": "#35A77C",
+            "brightWhite": "#FFFBEF"
+        },
+        {
             "name": "Rose Pine",
             "background": "#191724",
             "foreground": "#E0DEF4",
@@ -222,7 +245,7 @@
 
     "profiles": {
         "defaults": {
-            "colorScheme": "Everforest Dark Soft",
+            "colorScheme": "Everforest Light Soft",
             "cursorShape": "filledBox",
             "useAcrylic": true,
             "opacity": 95,

@@ -47,11 +47,11 @@ config.tab_max_width = TAB_MAX_WIDTH
 
 -- Color scheme: a WezTerm built-in, rewritten by `theme set <name>` (themes/<name>.psd1
 -- WeztermScheme). Keep the trailing marker comment intact so the switcher can find this line.
-config.color_scheme = 'Everforest Dark Soft' -- win-dotfiles:theme
+config.color_scheme = 'Everforest Light Soft' -- win-dotfiles:theme
 
--- Everforest Dark Soft isn't among this WezTerm build's built-ins (only the darker Gogh
--- variant), so ship it inline; custom color_schemes entries resolve by name like built-ins.
--- Values mirror themes/everforest.psd1 and the Windows Terminal scheme of the same name.
+-- The Everforest Soft variants aren't among this WezTerm build's built-ins (only the darker
+-- Gogh pair), so ship them inline; custom color_schemes entries resolve by name like built-ins.
+-- Values mirror themes/everforest*.psd1 and the Windows Terminal schemes of the same names.
 config.color_schemes = {
   ['Everforest Dark Soft'] = {
     background = '#333c43',
@@ -64,13 +64,24 @@ config.color_schemes = {
     ansi = { '#333c43', '#e67e80', '#a7c080', '#dbbc7f', '#7fbbb3', '#d699b6', '#83c092', '#d3c6aa' },
     brights = { '#859289', '#e67e80', '#a7c080', '#dbbc7f', '#7fbbb3', '#d699b6', '#83c092', '#f2efdf' },
   },
+  ['Everforest Light Soft'] = {
+    background = '#f3ead3',
+    foreground = '#5c6a72',
+    cursor_bg = '#5c6a72',
+    cursor_fg = '#f3ead3',
+    cursor_border = '#5c6a72',
+    selection_bg = '#ddd8be',
+    selection_fg = '#5c6a72',
+    ansi = { '#7a8478', '#e67e80', '#8da666', '#c1a266', '#72aea6', '#c98ca9', '#76b385', '#a5a292' },
+    brights = { '#99a393', '#f85552', '#8da101', '#dfa000', '#3a94c5', '#df69ba', '#35a77c', '#fffbef' },
+  },
 }
 
 -- OS auto light/dark: when Windows is in light mode, override the theme-managed (dark) scheme
 -- with a light counterpart. Dark mode leaves the marker scheme untouched, so `theme set` stays
 -- authoritative. WezTerm re-evaluates this whole file when the OS appearance changes, so no
--- extra event wiring is needed. The candidate is only applied if it's a real built-in scheme,
--- so a bad mapping falls back to the dark scheme instead of erroring on load.
+-- extra event wiring is needed. The candidate is only applied if it resolves to a real scheme
+-- (custom or built-in), so a bad mapping falls back to the dark scheme instead of erroring.
 local light_for = {
   ['Dracula'] = 'Catppuccin Latte',
   ['Catppuccin Mocha'] = 'Catppuccin Latte',
@@ -79,13 +90,14 @@ local light_for = {
   ['Gruvbox dark, medium (base16)'] = 'Gruvbox light, medium (base16)',
   ['Gruvbox Material (Gogh)'] = 'Gruvbox light, medium (base16)',
   ['Ashes (base16)'] = 'Catppuccin Latte',
-  ['Everforest Dark Soft'] = 'Everforest Light (Gogh)',
+  ['Everforest Dark Soft'] = 'Everforest Light Soft',
 }
 do
   local ok, appearance = pcall(function() return wezterm.gui.get_appearance() end)
   if ok and appearance and appearance:find 'Light' then
     local candidate = light_for[config.color_scheme]
-    if candidate and wezterm.color.get_builtin_schemes()[candidate] then
+    if candidate and ((config.color_schemes or {})[candidate]
+        or wezterm.color.get_builtin_schemes()[candidate]) then
       config.color_scheme = candidate
     end
   end

@@ -7,7 +7,7 @@ command_timeout = 500
 scan_timeout = 10
 
 # Active palette — rewritten by `theme set <name>` (themes/<name>.psd1 StarshipPalette).
-palette = "everforest"
+palette = "everforest-light"
 
 # Core modules reference the active palette's roles, so flipping `palette` above recolors the
 # prompt in lock-step with the rest of the theme. Keep the default starship layout; only restyle.
@@ -74,6 +74,12 @@ path = "#7fbbb3"   # blue
 branch = "#a7c080" # sage green accent
 ok = "#83c092"     # aqua
 err = "#e67e80"    # red
+
+[palettes.everforest-light]   # Everforest Light Soft
+path = "#3a94c5"   # blue
+branch = "#8da101" # sage green accent
+ok = "#35a77c"     # aqua
+err = "#f85552"    # red
 
 [palettes.rosepine]
 path = "#c4a7e7"   # iris
