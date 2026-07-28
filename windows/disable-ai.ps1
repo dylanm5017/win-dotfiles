@@ -67,10 +67,15 @@ Set-Reg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\SearchSettings'    'IsA
 Set-Reg 'HKCU:\Software\Microsoft\Notepad'                                  'CoPilotEnabled'    0
 
 Write-Host "`nCopilot app" -ForegroundColor Cyan
+$ProgressPreference = 'SilentlyContinue'  # Appx cmdlets leave progress bars behind in the console
 $pkg = Get-AppxPackage -Name Microsoft.Copilot -ErrorAction SilentlyContinue
 if ($pkg) {
-    $pkg | Remove-AppxPackage
-    Write-Host "  OK   Microsoft.Copilot removed" -ForegroundColor Green
+    try {
+        $pkg | Remove-AppxPackage -ErrorAction Stop
+        Write-Host "  OK   Microsoft.Copilot removed" -ForegroundColor Green
+    } catch {
+        Write-Host "  FAIL Microsoft.Copilot ($($_.Exception.Message))" -ForegroundColor Red
+    }
 } else {
     Write-Host "  --   Microsoft.Copilot not installed" -ForegroundColor DarkGray
 }

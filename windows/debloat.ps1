@@ -84,6 +84,12 @@ Write-Host "`nSuggested content (per-user)" -ForegroundColor Cyan
 Set-Reg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager' 'ContentDeliveryAllowed' 0
 
 Write-Host "`nRemove Store apps" -ForegroundColor Cyan
+$ProgressPreference = 'SilentlyContinue'  # Appx/DISM cmdlets leave progress bars behind in the console
+# One provisioned-package query for all apps; the DISM COM call can flake
+# ("Class not registered") under pwsh, so treat failure as "skip deprovision".
+$prov = @()
+try { $prov = @(Get-AppxProvisionedPackage -Online -ErrorAction Stop) }
+catch { Write-Host "  --   provisioned package list unavailable ($($_.Exception.Message.Trim())); skipping deprovision" -ForegroundColor DarkGray }
 foreach ($a in $apps) {
     $p = Get-AppxPackage -Name $a -ErrorAction SilentlyContinue
     if ($p) {
@@ -91,9 +97,9 @@ foreach ($a in $apps) {
         catch { Write-Host "  FAIL $a ($($_.Exception.Message))" -ForegroundColor Red }
     } else { Write-Host "  --   $a absent" -ForegroundColor DarkGray }
     # Deprovision so a fresh user profile doesn't get it back
-    $prov = Get-AppxProvisionedPackage -Online | Where-Object DisplayName -eq $a
-    if ($prov) {
-        try { Remove-AppxProvisionedPackage -Online -PackageName $prov.PackageName -ErrorAction Stop | Out-Null
+    $pp = $prov | Where-Object DisplayName -eq $a
+    if ($pp) {
+        try { Remove-AppxProvisionedPackage -Online -PackageName $pp.PackageName -ErrorAction Stop | Out-Null
               Write-Host "  OK   deprovisioned $a" -ForegroundColor Green }
         catch { Write-Host "  FAIL deprovision $a ($($_.Exception.Message))" -ForegroundColor Red }
     }
