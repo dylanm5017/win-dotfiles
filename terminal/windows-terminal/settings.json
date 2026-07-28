@@ -245,7 +245,7 @@
 
     "profiles": {
         "defaults": {
-            "colorScheme": "Everforest Light Soft",
+            "colorScheme": "Dracula",
             "cursorShape": "filledBox",
             "useAcrylic": true,
             "opacity": 95,

@@ -179,27 +179,10 @@
   "border_offset": -1,
   "border_style": "Rounded",
   "theme": {
-    "palette": "Custom",
-    "colours": {
-      "base_00": "#F3EAD3",
-      "base_01": "#EAE4CA",
-      "base_02": "#E5DFC5",
-      "base_03": "#DDD8BE",
-      "base_04": "#939F91",
-      "base_05": "#5C6A72",
-      "base_06": "#5C6A72",
-      "base_07": "#333C43",
-      "base_08": "#F85552",
-      "base_09": "#F57D26",
-      "base_0a": "#DFA000",
-      "base_0b": "#8DA101",
-      "base_0c": "#35A77C",
-      "base_0d": "#3A94C5",
-      "base_0e": "#DF69BA",
-      "base_0f": "#E66868"
-    },
+    "palette": "Base16",
+    "name": "Dracula",
     "unfocused_border": "Base03",
-    "bar_accent": "Base0B"
+    "bar_accent": "Base0E"
   },
   "stackbar": {
     "mode": "OnStack",
