@@ -14,9 +14,10 @@
     Windows permanently reserves Win+Space (the input-switcher), so Flow cannot bind Win+Space
     (it errors "hot key is already registered"). Alt+Space is Flow's reliable default.
 
-    Flow watches its active theme file, so a palette change (the `theme` command rewrites the
-    .xaml's marker block) repaints the launcher live. Idempotent and safe to run repeatedly;
-    a no-op with a warning when Flow isn't installed / hasn't been run yet.
+    Flow 1.x hot-reloaded the active theme file; Flow 2.x parses it once at startup, so when a
+    palette change (the `theme` command rewrites the .xaml's marker block) is staged here, the
+    running instance is restarted to repaint. Idempotent and safe to run repeatedly; a no-op
+    with a warning when Flow isn't installed / hasn't been run yet.
 #>
 [CmdletBinding()]
 param()
@@ -47,14 +48,31 @@ if (-not $dataRoot) {
     return
 }
 
-# Stage the theme into Flow's Themes directory.
+# Stage the theme into Flow's Themes directory, noting whether the staged copy actually changed
+# (drives the restart below — Flow 2.x only reads the theme at startup).
 $themesDir = Join-Path $dataRoot 'Themes'
 New-Item -ItemType Directory -Path $themesDir -Force | Out-Null
-Copy-Item -LiteralPath $themeSource -Destination (Join-Path $themesDir 'win-dotfiles.xaml') -Force
+$themeDest = Join-Path $themesDir 'win-dotfiles.xaml'
+$themeChanged = -not (Test-Path -LiteralPath $themeDest -PathType Leaf) -or
+    ((Get-Content -LiteralPath $themeSource -Raw) -ne (Get-Content -LiteralPath $themeDest -Raw))
+Copy-Item -LiteralPath $themeSource -Destination $themeDest -Force
+
+function Restart-FlowLauncherIfRunning {
+    # Flow 2.x has no theme hot-reload or reload command; a quick bounce of the hidden background
+    # process is the only way to repaint. No-op when Flow isn't running.
+    $flow = Get-Process -Name 'Flow.Launcher' -ErrorAction SilentlyContinue | Select-Object -First 1
+    if (-not $flow) { return }
+    $exe = $flow.Path
+    Stop-Process -Id $flow.Id -Force
+    Wait-Process -Id $flow.Id -Timeout 5 -ErrorAction SilentlyContinue
+    Start-Process -FilePath $exe
+    Write-Host 'Restarted Flow Launcher to load the new palette (Flow 2.x has no theme hot-reload).' -ForegroundColor DarkGray
+}
 
 $settingsPath = Join-Path $dataRoot 'Settings\Settings.json'
 if (-not (Test-Path -LiteralPath $settingsPath -PathType Leaf)) {
     Write-Warning "Flow settings not found ($settingsPath). Launch Flow once so it creates Settings.json, then re-run. The theme file is already staged."
+    if ($themeChanged) { Restart-FlowLauncherIfRunning }
     return
 }
 
@@ -99,8 +117,9 @@ try {
     }
 
     Write-Host "Flow Launcher themed (win-dotfiles), bound to Alt+Space, autostart on. Data root: $dataRoot" -ForegroundColor Green
-    Write-Host 'Theme hot-reloads if Flow is running; a hotkey change needs a Flow restart.' -ForegroundColor DarkGray
 }
 catch {
     Write-Warning "Could not patch Flow settings. Theme file is staged; select 'win-dotfiles' in Flow settings manually. Detail: $($_.Exception.Message)"
 }
+
+if ($themeChanged) { Restart-FlowLauncherIfRunning }

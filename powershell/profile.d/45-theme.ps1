@@ -327,7 +327,7 @@ function Update-WinDotfilesThemeConfigFiles {
         -Replacement (New-WinDotfilesVSCodeColorBlock -Palette $Theme.YasbPalette)
 
     # Flow Launcher: rewrite the marked palette-brush block in the theme XAML. Apply-FlowLauncher
-    # copies it into %APPDATA%\FlowLauncher\Themes; Flow hot-reloads the active theme file.
+    # stages it into Flow's Themes dir and restarts Flow (2.x only reads the theme at startup).
     Set-WinDotfilesFileContent -Path $flow `
         -Pattern '<!-- win-dotfiles:theme:start -->.*?<!-- win-dotfiles:theme:end -->' `
         -Replacement (New-WinDotfilesFlowThemeBlock -Palette $Theme.YasbPalette)
