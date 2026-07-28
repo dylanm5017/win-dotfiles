@@ -1839,6 +1839,9 @@ public static extern bool SystemParametersInfoMouse(uint uiAction, uint uiParam,
 
 [System.Runtime.InteropServices.DllImport("user32.dll", EntryPoint = "SystemParametersInfoW", CharSet = System.Runtime.InteropServices.CharSet.Unicode, SetLastError = true)]
 public static extern bool SystemParametersInfoWallpaper(uint uiAction, uint uiParam, string pvParam, uint fWinIni);
+
+[System.Runtime.InteropServices.DllImport("user32.dll", EntryPoint = "SendMessageTimeoutW", CharSet = System.Runtime.InteropServices.CharSet.Unicode, SetLastError = true)]
+public static extern System.IntPtr SendMessageTimeout(System.IntPtr hWnd, uint Msg, System.UIntPtr wParam, string lParam, uint fuFlags, uint uTimeout, out System.UIntPtr lpdwResult);
 '@
 }
 
@@ -2123,6 +2126,19 @@ function Set-WinWorkstationDesktopTheme {
     $lightMode = if ($theme.IsLight) { 1 } else { 0 }
     Set-WinWorkstationRegistryValue -Path $personalize -Name 'AppsUseLightTheme' -Value $lightMode -Type DWord -Manifest $Manifest
     Set-WinWorkstationRegistryValue -Path $personalize -Name 'SystemUsesLightTheme' -Value $lightMode -Type DWord -Manifest $Manifest
+
+    # Bare registry writes are invisible to running apps: OS-theme followers (Teams, launchers,
+    # WebView2/Electron apps) only re-read AppsUseLightTheme on this broadcast or on restart,
+    # which left them stuck in the old mode. Windows Settings sends the same message on toggle.
+    Initialize-WinWorkstationNativeMethods
+    if ([WinDotfiles.NativeMethods].GetMethod('SendMessageTimeout')) {
+        # HWND_BROADCAST, WM_SETTINGCHANGE (0x001A), SMTO_ABORTIFHUNG (0x02), 2s per window.
+        $broadcastResult = [UIntPtr]::Zero
+        [void][WinDotfiles.NativeMethods]::SendMessageTimeout([IntPtr]0xFFFF, 0x001A, [UIntPtr]::Zero, 'ImmersiveColorSet', 0x02, 2000, [ref]$broadcastResult)
+    }
+    else {
+        Write-Warning 'This session loaded an older native-methods type; open a new shell and re-run `theme` so running apps get the light/dark broadcast.'
+    }
 
     # ── Accent color ──────────────────────────────────────────────────────────────────────
     $hex = ([string]$theme.Accent).TrimStart('#')
