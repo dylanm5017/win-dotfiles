@@ -130,6 +130,7 @@
   ],
   "window_hiding_behaviour": "Cloak",
   "cross_monitor_move_behaviour": "Insert",
+  "window_container_behaviour": "Create",
   "mouse_follows_focus": false,
   "slow_application_compensation_time": 50,
   "slow_application_identifiers": [
@@ -199,8 +200,11 @@
         {
           "name": "DEV",
           "layout": "UltrawideVerticalStack",
+          "layout_options": {
+            "column_ratios": [0.4, 0.3]
+          },
           "window_container_behaviour_rules": {
-            "4": "Append"
+            "5": "Append"
           },
           "initial_workspace_rules": [
             {
@@ -210,17 +214,7 @@
             },
             {
               "kind": "Exe",
-              "id": "Codex.exe",
-              "matching_strategy": "Equals"
-            },
-            {
-              "kind": "Exe",
               "id": "Code.exe",
-              "matching_strategy": "Equals"
-            },
-            {
-              "kind": "Exe",
-              "id": "firefox.exe",
               "matching_strategy": "Equals"
             }
           ]
@@ -228,18 +222,32 @@
         {
           "name": "CODE",
           "layout": "UltrawideVerticalStack",
-          "layout_rules": {
-            "3": "UltrawideVerticalStack"
+          "layout_options": {
+            "column_ratios": [0.4, 0.3]
           },
           "window_container_behaviour_rules": {
-            "4": "Append"
+            "5": "Append"
           }
         },
         {
+          "name": "AGENT",
+          "layout": "Columns",
+          "window_container_behaviour_rules": {
+            "4": "Append"
+          },
+          "initial_workspace_rules": [
+            {
+              "kind": "Exe",
+              "id": "Codex.exe",
+              "matching_strategy": "Equals"
+            }
+          ]
+        },
+        {
           "name": "DEBUG",
-          "layout": "VerticalStack",
-          "layout_rules": {
-            "4": "Grid"
+          "layout": "UltrawideVerticalStack",
+          "layout_options": {
+            "column_ratios": [0.4, 0.3]
           },
           "window_container_behaviour_rules": {
             "5": "Append"
@@ -248,18 +256,25 @@
         {
           "name": "BROWSER",
           "layout": "Columns",
-          "layout_rules": {
-            "4": "Grid"
-          },
           "window_container_behaviour_rules": {
-            "5": "Append"
-          }
+            "4": "Append"
+          },
+          "initial_workspace_rules": [
+            {
+              "kind": "Exe",
+              "id": "firefox.exe",
+              "matching_strategy": "Equals"
+            }
+          ]
         },
         {
           "name": "MISC",
-          "layout": "Grid",
-          "window_container_behaviour_rules": {
-            "7": "Append"
+          "layout": "Scrolling",
+          "layout_options": {
+            "scrolling": {
+              "columns": 4,
+              "center_focused_column": true
+            }
           }
         }
       ]
@@ -270,7 +285,7 @@
           "name": "COMMS",
           "layout": "VerticalStack",
           "window_container_behaviour_rules": {
-            "1": "Append"
+            "2": "Append"
           },
           "initial_workspace_rules": [
             {
@@ -303,6 +318,9 @@
         {
           "name": "MEDIA",
           "layout": "HorizontalStack",
+          "window_container_behaviour_rules": {
+            "2": "Append"
+          },
           "workspace_rules": [
             {
               "kind": "Exe",
@@ -312,10 +330,19 @@
           ]
         },
         {
-          "name": "EXTRA",
+          "name": "MAIL",
           "layout": "VerticalStack",
           "window_container_behaviour_rules": {
-            "4": "Append"
+            "2": "Append"
+          }
+        },
+        {
+          "name": "EXTRA",
+          "layout": "Scrolling",
+          "layout_options": {
+            "scrolling": {
+              "columns": 2
+            }
           }
         }
       ]

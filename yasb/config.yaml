@@ -21,7 +21,9 @@ system_colors: false     # palette is driven explicitly via styles.css :root, no
 komorebi:
   start_command: "komorebic start --whkd"
   stop_command: "komorebic stop --whkd"
-  reload_command: "komorebic reload-configuration"
+  # reload-configuration only reloads legacy .ahk/.ps1 configs; a static komorebi.json needs
+  # replace-configuration, so the old value here was a silent no-op.
+  reload_command: "komorebic replace-configuration C:\\Workspace\\Projects\\win-dotfiles\\komorebi\\komorebi.json"
 
 bars:
   # Light, ambient bar on the primary Samsung ultrawide.
@@ -67,9 +69,9 @@ widgets:
     type: "komorebi.workspaces.WorkspaceWidget"
     options:
       label_offline: "komorebi offline"
-      label_workspace_btn: "{index}"
-      label_workspace_active_btn: "{index}"
-      label_workspace_populated_btn: "{index}"
+      label_workspace_btn: "{name}"
+      label_workspace_active_btn: "{name}"
+      label_workspace_populated_btn: "{name}"
       hide_empty_workspaces: true
       hide_if_offline: false
       app_icons:
@@ -105,7 +107,7 @@ widgets:
         tiling: "󰙀"
       callbacks:
         on_left: "next_layout"
-        on_middle: "toggle_monocle"
+        on_middle: "toggle_tiling"
         on_right: "prev_layout"
 
   komorebi_control:

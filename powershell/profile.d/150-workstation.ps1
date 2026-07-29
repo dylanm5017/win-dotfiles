@@ -2524,7 +2524,21 @@ function Set-WinWindowManagerFocusIntent {
     [CmdletBinding()]
     param()
 
-    [void](Invoke-WinWindowManagerCommand -Arguments @('toggle-monocle'))
+    # Give the focused window the primary tile rather than going full-screen: a single window on a
+    # 32:9 panel wastes it. Promote + ultrawide main-stack keeps the flanking columns visible.
+    [void](Invoke-WinWindowManagerCommand -Arguments @('promote'))
+    [void](Invoke-WinWindowManagerCommand -Arguments @('change-layout', 'ultrawide-vertical-stack'))
+    [void](Invoke-WinWindowManagerCommand -Arguments @('retile'))
+}
+
+function Set-WinWindowManagerWorkspace {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$Name
+    )
+
+    # Workspace names are monitor-agnostic: komorebi focuses the owning monitor first.
+    [void](Invoke-WinWindowManagerCommand -Arguments @('focus-named-workspace', $Name.ToUpperInvariant()))
 }
 
 function Reset-WinWindowManagerLayout {
@@ -2589,5 +2603,6 @@ Set-Alias -Name wmcheck -Value Test-WinWindowManager -Force
 Set-Alias -Name wmdev -Value Set-WinWindowManagerDevIntent -Force
 Set-Alias -Name wmbrowse -Value Set-WinWindowManagerBrowseIntent -Force
 Set-Alias -Name wmfocus -Value Set-WinWindowManagerFocusIntent -Force
+Set-Alias -Name wmws -Value Set-WinWindowManagerWorkspace -Force
 Set-Alias -Name wmreset -Value Reset-WinWindowManagerLayout -Force
 Set-Alias -Name wmdiag -Value Save-WinWindowManagerDiagnostics -Force

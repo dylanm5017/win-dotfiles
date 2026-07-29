@@ -97,14 +97,16 @@
     padding: 0 2px;
 }
 
+/* Buttons are labelled with workspace names (DEV, BROWSER, ...) rather than indices, so they run
+   roughly 4x wider than digits did. Tighter type and padding keeps the row within the 1080p bar. */
 .komorebi-workspaces .ws-btn {
     color: var(--subtext);
     background-color: transparent;
     border: none;
     border-radius: 8px;
-    font-size: 14px;
-    margin: 3px 2px;
-    padding: 0 7px;
+    font-size: 12px;
+    margin: 3px 1px;
+    padding: 0 5px;
 }
 
 .komorebi-workspaces .ws-btn:hover {

@@ -264,15 +264,53 @@ The whole system is themed from a single palette so the terminal, prompt, window
 ## Window manager
 
 - Komorebi config lives in `komorebi/komorebi.json`; whkd keybindings live in `komorebi/whkdrc`.
-- Default layouts favor ultrawide main-stack workspaces for DEV/CODE, columns for browser work, and append-to-stack rules once a workspace gets crowded.
 - Popup handling keeps common dialogs, PowerToys overlays, browser PiP, and Teams call/notification overlays out of the tiling graph.
-- Depth: focused windows wear a rounded accent border (`border_style: Rounded`, width 3, themed by `theme`); unfocused windows fade slightly translucent (`transparency`, alpha 220) with a smooth easing animation, echoing the frosted bars.
-- `wmcheck` runs komorebi's config check.
-- `wmdev`, `wmbrowse`, `wmfocus`, and `wmreset` apply common window-manager intents from the shell.
+- Depth: focused windows wear a rounded accent border (`border_style: Rounded`, width 3, themed by `theme`) with a smooth easing animation on movement. Transparency is configured but left off — it breaks tiling for layered apps (Firefox, Windows Terminal).
+
+### Workspaces
+
+Ten named workspaces, six on the ultrawide and four on the secondary. `Alt+<digit>` is
+**monitor-agnostic**: komorebi focuses the owning monitor first, so one keypress crosses displays and
+there is no separate "switch monitor" step in normal use.
+
+| Key | Workspace | Monitor | Layout | Visible tiles |
+| --- | --- | --- | --- | --- |
+| `Alt+1` | DEV | ultrawide | ultrawide main-stack | 5 |
+| `Alt+2` | CODE | ultrawide | ultrawide main-stack | 5 |
+| `Alt+3` | AGENT | ultrawide | columns | 4 |
+| `Alt+4` | DEBUG | ultrawide | ultrawide main-stack | 5 |
+| `Alt+5` | BROWSER | ultrawide | columns | 4 |
+| `Alt+6` | MISC | ultrawide | scrolling | 4 at a time |
+| `Alt+7` | COMMS | secondary | vertical stack | 2 |
+| `Alt+8` | MEDIA | secondary | horizontal stack | 2 |
+| `Alt+9` | MAIL | secondary | vertical stack | 2 |
+| `Alt+0` | EXTRA | secondary | scrolling | 2 at a time |
+
+- `Alt+Shift+<digit>` moves the focused window there and follows it; `Ctrl+Alt+<digit>` shoves it
+  there and stays put — that second one is the "this workspace is getting crowded" gesture.
+- `Alt+` `` ` `` jumps to the last workspace, `Alt+Shift+` `` ` `` moves a window to it.
+- Tile counts are ceilings derived from minimum usable width on a 5120x1440 panel. Past the ceiling
+  komorebi appends into a stack rather than slicing thinner; `Alt+;` unstacks one, `Alt+Shift+;`
+  unstacks all, and `Alt+[` / `Alt+]` cycle within a stack.
+- MISC and EXTRA use the **scrolling** layout instead of a ceiling: a fixed number of columns stays
+  visible and the rest scroll off-screen, so an overflow workspace never degenerates into slivers or
+  a wall of tabs. `Alt+Shift+N` switches any workspace to it.
+- Monocle is deliberately unbound — one window on a 32:9 panel wastes it. `wmfocus` promotes the
+  focused window to the primary tile instead.
+- Positional fallbacks: `Alt+,` / `Alt+.` focus a monitor directly, `Alt+←` / `Alt+→` cycle monitors,
+  `Alt+↑` / `Alt+↓` cycle workspaces.
+
+### Shell and layout commands
+
+- `wmcheck` runs komorebi's config check; `wmreset` reloads `komorebi.json` and retiles.
+- `wmdev`, `wmbrowse`, and `wmfocus` apply common intents; `wmws <NAME>` jumps to a workspace by name.
 - `wmstart` starts `komorebi` with `whkd` using a clean state, and starts the Yasb bar alongside it.
 - `wmstop` stops `komorebi` and `whkd` (restoring hidden windows) and stops the Yasb bar.
-- Intent hotkeys: `Alt+Shift+D` DEV, `Alt+Shift+W` browser columns, `Alt+Shift+F` focus/monocle, `Alt+Shift+Z` reset config and retile.
-- Layout hotkeys: `Alt+Shift+U` main-stack, `Alt+Shift+C` columns, `Alt+Shift+G` grid, `Alt+Shift+B` BSP, `Alt+Shift+S` stack all. Stackbars show only on stacks with compact title labels.
+- Layout hotkeys: `Alt+Shift+U` ultrawide main-stack, `Alt+Shift+C` columns, `Alt+Shift+G` grid,
+  `Alt+Shift+V` vertical stack, `Alt+Shift+N` scrolling, `Alt+Shift+B` BSP. Stackbars show only on
+  stacks, with compact title labels.
+- `Alt+Shift+O` reloads `komorebi.json`. Note komorebi's `reload-configuration` only handles legacy
+  `.ahk`/`.ps1` configs — a static `komorebi.json` needs `replace-configuration`.
 
 ### Raise or launch
 

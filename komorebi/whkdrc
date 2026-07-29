@@ -2,7 +2,9 @@
 
 # Reload whkd configuration
 alt + o                 : taskkill /f /im whkd.exe; Start-Process whkd -WindowStyle hidden
-alt + shift + o         : komorebic reload-configuration
+# Reload komorebi. `reload-configuration` only reloads legacy .ahk/.ps1 configs and is a no-op for
+# a static komorebi.json, so this has to be replace-configuration against the repo file.
+alt + shift + o         : komorebic replace-configuration C:\Workspace\Projects\win-dotfiles\komorebi\komorebi.json; komorebic retile
 
 alt + i                 : komorebic toggle-shortcuts
 
@@ -39,18 +41,23 @@ alt + shift + h         : komorebic move left
 alt + shift + j         : komorebic move down
 alt + shift + k         : komorebic move up
 alt + shift + l         : komorebic move right
-win + left              : komorebic move left
-win + down              : komorebic move down
-win + up                : komorebic move up
-win + right             : komorebic move right
 alt + shift + return    : komorebic promote
 
-# Stack windows
-alt + left              : komorebic stack left
-alt + down              : komorebic stack down
-alt + up                : komorebic stack up
-alt + right             : komorebic stack right
+# Monitors and workspace cycling. Named workspace binds below already cross monitors, so these are
+# the positional fallback for "whatever is next door".
+alt + oem_comma         : komorebic focus-monitor 0
+alt + oem_period        : komorebic focus-monitor 1
+alt + shift + oem_comma : komorebic move-to-monitor 0
+alt + shift + oem_period: komorebic move-to-monitor 1
+alt + left              : komorebic cycle-monitor previous
+alt + right             : komorebic cycle-monitor next
+alt + up                : komorebic cycle-workspace previous
+alt + down              : komorebic cycle-workspace next
+
+# Stacks. Workspaces are the primary tool now; stacking only happens automatically when a workspace
+# hits its container ceiling, so these are navigation and escape hatches, not a layout choice.
 alt + oem_1             : komorebic unstack
+alt + shift + oem_1     : komorebic unstack-all
 alt + oem_4             : komorebic cycle-stack previous
 alt + oem_6             : komorebic cycle-stack next
 
@@ -62,7 +69,8 @@ alt + shift + oem_minus : komorebic resize-axis vertical decrease
 
 # Manipulate windows
 alt + t                 : komorebic toggle-float
-alt + shift + f         : komorebic toggle-monocle
+# Lock the focused container so new windows tile around it instead of splitting it.
+ctrl + alt + t          : komorebic toggle-lock
 
 # Window manager options
 alt + shift + r         : komorebic retile
@@ -71,31 +79,52 @@ alt + p                 : komorebic toggle-pause
 # Layouts
 alt + x                 : komorebic flip-layout horizontal
 alt + y                 : komorebic flip-layout vertical
-alt + shift + d         : komorebic focus-named-workspace DEV; komorebic named-workspace-layout DEV ultrawide-vertical-stack; komorebic named-workspace-padding DEV 8; komorebic named-workspace-container-padding DEV 6; komorebic retile
-alt + shift + w         : komorebic focus-named-workspace BROWSER; komorebic named-workspace-layout BROWSER columns; komorebic named-workspace-padding BROWSER 8; komorebic named-workspace-container-padding BROWSER 6; komorebic retile
-alt + shift + z         : komorebic replace-configuration C:\Workspace\Projects\win-dotfiles\komorebi\komorebi.json; komorebic retile
 alt + shift + u         : komorebic change-layout ultrawide-vertical-stack
 alt + shift + c         : komorebic change-layout columns
 alt + shift + g         : komorebic change-layout grid
+alt + shift + v         : komorebic change-layout vertical-stack
+# Scrolling keeps a fixed number of columns visible and scrolls the rest off-screen, which is the
+# non-monocle answer to a crowded workspace on a 32:9 panel.
+alt + shift + n         : komorebic change-layout scrolling
 alt + shift + b         : komorebic change-layout bsp
-alt + shift + s         : komorebic stack-all
 
-# Workspaces
-alt + 1                 : komorebic focus-workspace 0
-alt + 2                 : komorebic focus-workspace 1
-alt + 3                 : komorebic focus-workspace 2
-alt + 4                 : komorebic focus-workspace 3
-alt + 5                 : komorebic focus-workspace 4
-alt + 6                 : komorebic focus-workspace 5
-alt + 7                 : komorebic focus-workspace 6
-alt + 8                 : komorebic focus-workspace 7
+# Workspaces. Named rather than indexed, so one keypress crosses monitors: komorebi focuses the
+# owning monitor first, then the workspace. alt+1-6 land on the ultrawide, alt+7-0 on the ASUS.
+alt + 1                 : komorebic focus-named-workspace DEV
+alt + 2                 : komorebic focus-named-workspace CODE
+alt + 3                 : komorebic focus-named-workspace AGENT
+alt + 4                 : komorebic focus-named-workspace DEBUG
+alt + 5                 : komorebic focus-named-workspace BROWSER
+alt + 6                 : komorebic focus-named-workspace MISC
+alt + 7                 : komorebic focus-named-workspace COMMS
+alt + 8                 : komorebic focus-named-workspace MEDIA
+alt + 9                 : komorebic focus-named-workspace MAIL
+alt + 0                 : komorebic focus-named-workspace EXTRA
 
-# Move windows across workspaces
-alt + shift + 1         : komorebic move-to-workspace 0
-alt + shift + 2         : komorebic move-to-workspace 1
-alt + shift + 3         : komorebic move-to-workspace 2
-alt + shift + 4         : komorebic move-to-workspace 3
-alt + shift + 5         : komorebic move-to-workspace 4
-alt + shift + 6         : komorebic move-to-workspace 5
-alt + shift + 7         : komorebic move-to-workspace 6
-alt + shift + 8         : komorebic move-to-workspace 7
+alt + oem_3             : komorebic focus-last-workspace
+alt + shift + oem_3     : komorebic move-to-last-workspace
+
+# Move the focused window to a workspace and follow it there
+alt + shift + 1         : komorebic move-to-named-workspace DEV
+alt + shift + 2         : komorebic move-to-named-workspace CODE
+alt + shift + 3         : komorebic move-to-named-workspace AGENT
+alt + shift + 4         : komorebic move-to-named-workspace DEBUG
+alt + shift + 5         : komorebic move-to-named-workspace BROWSER
+alt + shift + 6         : komorebic move-to-named-workspace MISC
+alt + shift + 7         : komorebic move-to-named-workspace COMMS
+alt + shift + 8         : komorebic move-to-named-workspace MEDIA
+alt + shift + 9         : komorebic move-to-named-workspace MAIL
+alt + shift + 0         : komorebic move-to-named-workspace EXTRA
+
+# Shove the focused window to a workspace and stay put. This is the "this workspace is getting
+# crowded" gesture that replaces reaching for a stack.
+ctrl + alt + 1          : komorebic send-to-named-workspace DEV
+ctrl + alt + 2          : komorebic send-to-named-workspace CODE
+ctrl + alt + 3          : komorebic send-to-named-workspace AGENT
+ctrl + alt + 4          : komorebic send-to-named-workspace DEBUG
+ctrl + alt + 5          : komorebic send-to-named-workspace BROWSER
+ctrl + alt + 6          : komorebic send-to-named-workspace MISC
+ctrl + alt + 7          : komorebic send-to-named-workspace COMMS
+ctrl + alt + 8          : komorebic send-to-named-workspace MEDIA
+ctrl + alt + 9          : komorebic send-to-named-workspace MAIL
+ctrl + alt + 0          : komorebic send-to-named-workspace EXTRA
