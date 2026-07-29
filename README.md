@@ -316,10 +316,10 @@ Apps land on the right workspace on their own. There are two rule types and the 
 | AGENT | — | Codex |
 | DEBUG | — | MySQL Workbench, DBeaver, MongoDB Compass, SSMS, Postman |
 | BROWSER | — | Firefox, Chrome, Edge, Vivaldi |
-| MISC | — | Notion, Notepad++, WinMerge, WinSCP |
+| MISC | Elgato Wave Link | Notion, Notepad++, WinMerge, WinSCP |
 | COMMS | Slack, Discord | Teams, Zoom |
 | MEDIA | Spotify, YouTube Music | — |
-| MAIL | — | Outlook |
+| MAIL | — | Outlook (classic and new) |
 
 Teams and Zoom are seeded rather than pinned on purpose: meetings and screen-share often want the
 ultrawide, and a pinned rule would drag them back mid-call. Meeting/call popups are separately kept
@@ -327,7 +327,14 @@ out of the tiling graph by `ignore_rules`.
 
 Matching is on executable name and is **case-sensitive** (`matching_strategy: Equals`) — there is no
 case-insensitive option, so a rule with the wrong casing silently never fires. Outlook uses a
-`Regex` rule with `(?i)` because Office is inconsistent about it.
+`Regex` rule with `(?i)` because Office is inconsistent about it, and is routed under both
+`outlook.exe` (classic) and `olk.exe` (new Outlook).
+
+Monitors are pinned in `display_index_preferences` by **`device_id`**, not serial number. The ASUS
+reports its `serial_number_id` intermittently — when it comes back `null`, a serial-keyed mapping
+stops resolving and that monitor silently falls back to unnamed default workspaces, which breaks the
+`Alt+7`–`Alt+0` binds. `device_id` is tied to the physical port and does not have this problem.
+Check with `komorebic monitor-information` if a monitor's workspaces ever come up unnamed.
 
 ### Shell and layout commands
 

@@ -3,8 +3,8 @@
   "app_specific_configuration_path": "$Env:USERPROFILE/applications.json",
   "global_work_area_offset": { "left": 0, "top": 42, "right": 0, "bottom": 42 },
   "display_index_preferences": {
-    "0": "H1AK500000",
-    "1": "#ASPABZYDGXnd"
+    "0": "SAM0F9C-5&f1920c6&0&UID4355",
+    "1": "AUS24B1-5&f1920c6&0&UID4353"
   },
   "float_rule_placement": "Center",
   "floating_applications": [
@@ -328,6 +328,13 @@
               "center_focused_column": true
             }
           },
+          "workspace_rules": [
+            {
+              "kind": "Exe",
+              "id": "Elgato.WaveLink.exe",
+              "matching_strategy": "Equals"
+            }
+          ],
           "initial_workspace_rules": [
             {
               "kind": "Exe",
@@ -426,6 +433,11 @@
               "kind": "Exe",
               "id": "(?i)^outlook\\.exe$",
               "matching_strategy": "Regex"
+            },
+            {
+              "kind": "Exe",
+              "id": "olk.exe",
+              "matching_strategy": "Equals"
             }
           ]
         },
