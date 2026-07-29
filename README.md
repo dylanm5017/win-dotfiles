@@ -300,6 +300,35 @@ there is no separate "switch monitor" step in normal use.
 - Positional fallbacks: `Alt+,` / `Alt+.` focus a monitor directly, `Alt+←` / `Alt+→` cycle monitors,
   `Alt+↑` / `Alt+↓` cycle workspaces.
 
+### App routing
+
+Apps land on the right workspace on their own. There are two rule types and the difference matters:
+
+- **Pinned** (`workspace_rules`) — komorebi sends the window back every time it sees it. You cannot
+  keep it elsewhere. For single-home apps you never deliberately relocate.
+- **Seeded** (`initial_workspace_rules`) — fires once, the first time the window appears. After that
+  the window is yours: move it anywhere and it stays. For anything whose content you might sometimes
+  want on the big screen.
+
+| Workspace | Pinned | Seeded |
+| --- | --- | --- |
+| DEV | — | WezTerm, Windows Terminal, VS Code, Visual Studio |
+| AGENT | — | Codex |
+| DEBUG | — | MySQL Workbench, DBeaver, MongoDB Compass, SSMS, Postman |
+| BROWSER | — | Firefox, Chrome, Edge, Vivaldi |
+| MISC | — | Notion, Notepad++, WinMerge, WinSCP |
+| COMMS | Slack, Discord | Teams, Zoom |
+| MEDIA | Spotify, YouTube Music | — |
+| MAIL | — | Outlook |
+
+Teams and Zoom are seeded rather than pinned on purpose: meetings and screen-share often want the
+ultrawide, and a pinned rule would drag them back mid-call. Meeting/call popups are separately kept
+out of the tiling graph by `ignore_rules`.
+
+Matching is on executable name and is **case-sensitive** (`matching_strategy: Equals`) — there is no
+case-insensitive option, so a rule with the wrong casing silently never fires. Outlook uses a
+`Regex` rule with `(?i)` because Office is inconsistent about it.
+
 ### Shell and layout commands
 
 - `wmcheck` runs komorebi's config check; `wmreset` reloads `komorebi.json` and retiles.

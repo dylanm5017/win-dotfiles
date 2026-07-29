@@ -209,12 +209,22 @@
           "initial_workspace_rules": [
             {
               "kind": "Exe",
+              "id": "wezterm-gui.exe",
+              "matching_strategy": "Equals"
+            },
+            {
+              "kind": "Exe",
               "id": "WindowsTerminal.exe",
               "matching_strategy": "Equals"
             },
             {
               "kind": "Exe",
               "id": "Code.exe",
+              "matching_strategy": "Equals"
+            },
+            {
+              "kind": "Exe",
+              "id": "devenv.exe",
               "matching_strategy": "Equals"
             }
           ]
@@ -251,7 +261,34 @@
           },
           "window_container_behaviour_rules": {
             "5": "Append"
-          }
+          },
+          "initial_workspace_rules": [
+            {
+              "kind": "Exe",
+              "id": "MySQLWorkbench.exe",
+              "matching_strategy": "Equals"
+            },
+            {
+              "kind": "Exe",
+              "id": "dbeaver.exe",
+              "matching_strategy": "Equals"
+            },
+            {
+              "kind": "Exe",
+              "id": "MongoDBCompass.exe",
+              "matching_strategy": "Equals"
+            },
+            {
+              "kind": "Exe",
+              "id": "Ssms.exe",
+              "matching_strategy": "Equals"
+            },
+            {
+              "kind": "Exe",
+              "id": "Postman.exe",
+              "matching_strategy": "Equals"
+            }
+          ]
         },
         {
           "name": "BROWSER",
@@ -264,6 +301,21 @@
               "kind": "Exe",
               "id": "firefox.exe",
               "matching_strategy": "Equals"
+            },
+            {
+              "kind": "Exe",
+              "id": "chrome.exe",
+              "matching_strategy": "Equals"
+            },
+            {
+              "kind": "Exe",
+              "id": "msedge.exe",
+              "matching_strategy": "Equals"
+            },
+            {
+              "kind": "Exe",
+              "id": "vivaldi.exe",
+              "matching_strategy": "Equals"
             }
           ]
         },
@@ -275,7 +327,29 @@
               "columns": 4,
               "center_focused_column": true
             }
-          }
+          },
+          "initial_workspace_rules": [
+            {
+              "kind": "Exe",
+              "id": "Notion.exe",
+              "matching_strategy": "Equals"
+            },
+            {
+              "kind": "Exe",
+              "id": "notepad++.exe",
+              "matching_strategy": "Equals"
+            },
+            {
+              "kind": "Exe",
+              "id": "WinMergeU.exe",
+              "matching_strategy": "Equals"
+            },
+            {
+              "kind": "Exe",
+              "id": "WinSCP.exe",
+              "matching_strategy": "Equals"
+            }
+          ]
         }
       ]
     },
@@ -287,7 +361,7 @@
           "window_container_behaviour_rules": {
             "2": "Append"
           },
-          "initial_workspace_rules": [
+          "workspace_rules": [
             {
               "kind": "Exe",
               "id": "slack.exe",
@@ -307,10 +381,17 @@
               "kind": "Exe",
               "id": "DiscordPTB.exe",
               "matching_strategy": "Equals"
-            },
+            }
+          ],
+          "initial_workspace_rules": [
             {
               "kind": "Exe",
               "id": "ms-teams.exe",
+              "matching_strategy": "Equals"
+            },
+            {
+              "kind": "Exe",
+              "id": "Zoom.exe",
               "matching_strategy": "Equals"
             }
           ]
@@ -326,6 +407,11 @@
               "kind": "Exe",
               "id": "Spotify.exe",
               "matching_strategy": "Equals"
+            },
+            {
+              "kind": "Exe",
+              "id": "youtube-music-desktop-app.exe",
+              "matching_strategy": "Equals"
             }
           ]
         },
@@ -334,7 +420,14 @@
           "layout": "VerticalStack",
           "window_container_behaviour_rules": {
             "2": "Append"
-          }
+          },
+          "initial_workspace_rules": [
+            {
+              "kind": "Exe",
+              "id": "(?i)^outlook\\.exe$",
+              "matching_strategy": "Regex"
+            }
+          ]
         },
         {
           "name": "EXTRA",
