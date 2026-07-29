@@ -47,11 +47,6 @@
       "kind": "Exe",
       "id": "PowerToys.PowerOCR.exe",
       "matching_strategy": "Equals"
-    },
-    {
-      "kind": "Title",
-      "id": "Meeting in ",
-      "matching_strategy": "StartsWith"
     }
   ],
   "ignore_rules": [
