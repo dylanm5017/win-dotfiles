@@ -359,9 +359,9 @@
       "workspaces": [
         {
           "name": "COMMS",
-          "layout": "VerticalStack",
+          "layout": "Grid",
           "window_container_behaviour_rules": {
-            "2": "Append"
+            "4": "Append"
           },
           "workspace_rules": [
             {

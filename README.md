@@ -281,7 +281,7 @@ there is no separate "switch monitor" step in normal use.
 | `Alt+4` | DEBUG | ultrawide | ultrawide main-stack | 5 |
 | `Alt+5` | BROWSER | ultrawide | columns | 4 |
 | `Alt+6` | MISC | ultrawide | scrolling | 4 at a time |
-| `Alt+7` | COMMS | secondary | vertical stack | 2 |
+| `Alt+7` | COMMS | secondary | grid | 4 |
 | `Alt+8` | MEDIA | secondary | horizontal stack | 2 |
 | `Alt+9` | MAIL | secondary | vertical stack | 2 |
 | `Alt+0` | EXTRA | secondary | scrolling | 2 at a time |
