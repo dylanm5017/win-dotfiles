@@ -345,8 +345,14 @@ Check with `komorebic monitor-information` if a monitor's workspaces ever come u
 - Layout hotkeys: `Alt+Shift+U` ultrawide main-stack, `Alt+Shift+C` columns, `Alt+Shift+G` grid,
   `Alt+Shift+V` vertical stack, `Alt+Shift+N` scrolling, `Alt+Shift+B` BSP. Stackbars show only on
   stacks, with compact title labels.
-- `Alt+Shift+O` reloads `komorebi.json`. Note komorebi's `reload-configuration` only handles legacy
-  `.ahk`/`.ps1` configs — a static `komorebi.json` needs `replace-configuration`.
+- `Alt+Shift+O` reloads `komorebi.json` — this is also the **undo for layout experiments**: it resets
+  every workspace to its configured layout, so trying `Alt+Shift+C`/`N`/`V` on a workspace is always
+  one keypress from reversible. `wmreset` does the same from the shell. Note komorebi's
+  `reload-configuration` only handles legacy `.ahk`/`.ps1` configs — a static `komorebi.json` needs
+  `replace-configuration`.
+- The `Alt+Shift+<layout>` keys act on the **focused** workspace only. If a layout key seems to do
+  nothing, focus is elsewhere — komorebi changed that workspace instead, silently. To retarget a
+  specific workspace regardless of focus, use `komorebic named-workspace-layout <NAME> <layout>`.
 
 ### Raise or launch
 
