@@ -7,25 +7,25 @@
  * CSS variables via var(--name), so the whole bar restyles in lock-step with the
  * terminal, prompt, komorebi borders, and desktop accent. Yasb hot-reloads on save.
  *
- * The bar uses a real frosted/acrylic blur (bars.*.blur_effect in config.yaml), so the
- * strip itself is the glass surface; widgets sit flat on it and the stats Grouper reads
- * as one inset island. Edit layout/shape here; edit colors in the theme .psd1 files.
+ * The bar strip is fully transparent (blur_effect is off in config.yaml) and each widget —
+ * or each Grouper of widgets — floats as its own rounded pill carrying the translucency.
+ * Edit layout/shape here; edit colors in the theme .psd1 files.
  */
 
 /* win-dotfiles:theme:start */
 :root {
-    --bg: #282A36;
-    --surface: #44475A;
-    --surface-alt: #6272A4;
-    --text: #F8F8F2;
-    --subtext: #6272A4;
-    --accent: #BD93F9;
-    --accent-alt: #8BE9FD;
-    --ok: #50FA7B;
-    --warn: #F1FA8C;
-    --err: #FF5555;
-    --island: rgba(40, 42, 54, 0.80);
-    --border: rgba(189, 147, 249, 0.35);
+    --bg: #191724;
+    --surface: #1f1d2e;
+    --surface-alt: #26233a;
+    --text: #e0def4;
+    --subtext: #908caa;
+    --accent: #ebbcba;
+    --accent-alt: #c4a7e7;
+    --ok: #9ccfd8;
+    --warn: #f6c177;
+    --err: #eb6f92;
+    --island: rgba(25, 23, 36, 0.82);
+    --border: rgba(235, 188, 186, 0.35);
 }
 /* win-dotfiles:theme:end */
 
@@ -36,22 +36,65 @@
     color: var(--text);
 }
 
-/* The whole bar is the frosted glass surface (blur is enabled in config). */
+/* ---- Pill/island shell ------------------------------------------------------------------
+   The strip itself is invisible: wallpaper shows through the whole bar and each widget (or
+   Grouper of widgets) floats as its own rounded pill. Blur is OFF in config.yaml for this —
+   a blurred band behind transparent pills reads as a solid bar again. Pills carry the
+   translucency instead, via --island. */
 .yasb-bar {
-    background-color: var(--island);
-    border-bottom: 1px solid var(--border);
-}
-
-/* Widgets sit flat on the glass — no per-widget pill. */
-.widget {
     background-color: transparent;
     border: none;
+}
+
+/* Every top-level widget is its own floating pill. */
+.widget {
+    background-color: var(--island);
+    border: none;
+    border-radius: 12px;
     padding: 0 4px;
-    margin: 0 2px;
+    margin: 3px 3px;
+}
+
+/* ...except widgets nested inside a Grouper, which share the Grouper's pill instead of
+   drawing a second one inside it. */
+.grouper .widget,
+.system-grouper .widget,
+.nav-group .widget,
+.dev-group .widget,
+.tray-group .widget,
+.sound-group .widget {
+    background-color: transparent;
+    border-radius: 0;
+    margin: 0;
+    padding: 0 2px;
+}
+
+/* Groupers used as visual islands get the same pill treatment as a lone widget. */
+.nav-group,
+.dev-group,
+.tray-group,
+.sound-group {
+    background-color: var(--island);
+    border: none;
+    border-radius: 12px;
+    padding: 0 4px;
+    margin: 3px 3px;
+}
+
+/* The Grouper's inner container carries its own default surface; the pill is drawn by the
+   Grouper itself, so blank the container out or it shows as a lighter block inside. */
+.grouper .container,
+.system-grouper .container,
+.nav-group .container,
+.dev-group .container,
+.tray-group .container,
+.sound-group .container {
+    background-color: transparent;
+    border: none;
 }
 
 .widget .label {
-    padding: 0 8px;
+    padding: 0 6px;
 }
 
 .widget .label:hover {
@@ -97,21 +140,22 @@
     padding: 0 2px;
 }
 
-/* Buttons are labelled with workspace names (DEV, BROWSER, ...) rather than indices, so they run
-   roughly 4x wider than digits did. Tighter type and padding keeps the row within the 1080p bar. */
+/* Icon-only chips (names are hidden in config). Each workspace is a small rounded well rather
+   than bare icons on the pill, so the row reads as discrete, clickable groups — otherwise four
+   app icons and four more app icons run together into one undifferentiated strip. */
 .komorebi-workspaces .ws-btn {
     color: var(--subtext);
-    background-color: transparent;
+    background-color: var(--surface);
     border: none;
-    border-radius: 8px;
+    border-radius: 9px;
     font-size: 12px;
-    margin: 3px 1px;
-    padding: 0 5px;
+    margin: 4px 3px;
+    padding: 0 8px;
 }
 
 .komorebi-workspaces .ws-btn:hover {
     color: var(--text);
-    background-color: var(--surface);
+    background-color: var(--surface-alt);
 }
 
 .komorebi-workspaces .ws-btn.populated {
@@ -154,12 +198,39 @@
     font-size: 15px;
 }
 
-/* ---- Focused window + clocks ---------------------------------------------------------- */
-.active-window-widget .label,
-.active-window-widget .label.active {
-    color: var(--text);
+/* ---- Komorebi stack (rich bar centre) --------------------------------------------------- */
+/* Reads like the workspace row: inactive windows recede, the focused one is accent-filled. */
+.komorebi-stack .window {
+    color: var(--subtext);
+    background-color: transparent;
+    border: none;
+    border-radius: 8px;
+    font-size: 12px;
+    margin: 3px 1px;
+    padding: 0 6px;
 }
 
+.komorebi-stack .window:hover {
+    color: var(--text);
+    background-color: var(--surface);
+}
+
+/* Accent text on a quiet surface, not an accent fill: unlike the short workspace names, the
+   focused title runs up to 36 characters and a solid accent block that wide shouts. */
+.komorebi-stack .window.active {
+    background-color: var(--surface);
+    font-weight: 700;
+}
+
+.komorebi-stack .window.active .label {
+    color: var(--accent);
+}
+
+.komorebi-stack .offline-status {
+    color: var(--err);
+}
+
+/* ---- Clocks ----------------------------------------------------------------------------- */
 .clock-widget .label {
     color: var(--accent);
     font-weight: 700;
@@ -195,19 +266,30 @@
     color: var(--surface-alt);
 }
 
-/* ---- System-stats Grouper (one inset frosted island) ---------------------------------- */
+/* ---- System-stats Grouper (one island, but collapsible) -------------------------------- */
 .system-grouper {
-    background-color: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    margin: 4px 4px;
-    padding: 0 2px;
+    background-color: var(--island);
+    border: none;
+    border-radius: 12px;
+    margin: 3px 3px;
+    padding: 0 4px;
 }
 
-.system-grouper .grouper-collapse-button,
-.grouper .grouper-collapse-button {
+/* Collapse chevron. The class is `grouper-button` (an earlier `.grouper-collapse-button`
+   rule here never matched, so it rendered as a default light-grey Qt QPushButton). */
+.system-grouper .grouper-button,
+.grouper .grouper-button {
     color: var(--subtext);
+    background-color: transparent;
+    border: none;
+    border-radius: 8px;
     padding: 0 6px;
+}
+
+.system-grouper .grouper-button:hover,
+.grouper .grouper-button:hover {
+    color: var(--text);
+    background-color: var(--surface);
 }
 
 .cpu-widget .icon,
@@ -403,6 +485,146 @@ QToolTip {
     color: var(--accent);
 }
 
+/* ---- Home menu (leading button) --------------------------------------------------------- */
+/* Deliberately the quietest thing in the nav island: it is a door, not a status. */
+.home-widget .icon {
+    color: var(--subtext);
+    font-size: 16px;
+    padding: 0 8px;
+}
+
+.home-widget .icon:hover {
+    color: var(--accent);
+}
+
+.home-menu {
+    background-color: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 8px;
+}
+
+.home-menu .menu-item {
+    color: var(--text);
+    padding: 9px 16px;
+    border-radius: 8px;
+}
+
+.home-menu .menu-item:hover {
+    background-color: var(--surface);
+}
+
+.home-menu .separator {
+    background-color: var(--surface-alt);
+    max-height: 1px;
+    margin: 6px 8px;
+}
+
+/* ---- Todo ------------------------------------------------------------------------------ */
+.todo-widget .label {
+    color: var(--subtext);
+}
+
+.todo-widget .icon {
+    color: var(--accent);
+}
+
+.todo-menu .header {
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.todo-menu .task-item {
+    background-color: var(--surface);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin: 3px 0;
+}
+
+.todo-menu .task-item .title {
+    color: var(--text);
+}
+
+.todo-menu .task-item .description,
+.todo-menu .task-item .date-text,
+.todo-menu .task-item .category-text {
+    color: var(--subtext);
+    font-size: 13px;
+}
+
+/* Priority accents on the left edge, so the list scans without reading every label. */
+.todo-menu .task-item.urgent    { border-left: 3px solid var(--err); }
+.todo-menu .task-item.important { border-left: 3px solid var(--warn); }
+.todo-menu .task-item.today     { border-left: 3px solid var(--accent); }
+.todo-menu .task-item.soon      { border-left: 3px solid var(--accent-alt); }
+
+.todo-menu .task-item.completed .title {
+    color: var(--subtext);
+}
+
+.todo-menu .add-task-button,
+.todo-menu .tab-buttons,
+.todo-menu .app-dialog .button {
+    color: var(--text);
+    background-color: var(--surface);
+    border: none;
+    border-radius: 8px;
+    padding: 8px 14px;
+    margin: 3px;
+}
+
+.todo-menu .add-task-button:hover,
+.todo-menu .tab-buttons:hover,
+.todo-menu .app-dialog .button:hover {
+    background-color: var(--accent);
+    color: var(--bg);
+}
+
+.todo-menu .no-tasks,
+.todo-menu .no-tasks-icon {
+    color: var(--subtext);
+}
+
+.app-dialog {
+    background-color: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+}
+
+.app-dialog .title-field,
+.app-dialog .desc-field {
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 8px 10px;
+}
+
+/* ---- Windows system tray (trailing island on the rich bar) ----------------------------- */
+.systray .button {
+    border-radius: 8px;
+    padding: 2px;
+    margin: 0 1px;
+}
+
+.systray .button:hover {
+    background-color: var(--surface);
+}
+
+.systray .unpinned-visibility-btn {
+    color: var(--subtext);
+    font-size: 12px;
+    padding: 0 4px;
+}
+
+.systray-popup,
+.systray-popup-container {
+    background-color: var(--bg);
+    border-radius: 12px;
+    padding: 8px;
+}
+
 /* ---- Cava audio visualizer ------------------------------------------------------------ */
 .cava-widget {
     padding: 0 6px;
@@ -561,6 +783,7 @@ QToolTip {
 .audio-menu,
 .weather-card,
 .notification-popup,
+.todo-menu,
 .github-menu,
 .claude-usage-menu {
     padding: 18px;

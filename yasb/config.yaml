@@ -34,7 +34,9 @@ bars:
     screens: ['primary']
     class_name: "yasb-bar light-bar"
     alignment: { position: "top", align: "center" }
-    blur_effect: { enabled: true, round_corners: true, round_corners_type: "normal" }
+    # Blur off: the strip itself is transparent in this style and each widget group is its
+    # own opaque pill, so a blurred band behind them would defeat the floating look.
+    blur_effect: { enabled: false, round_corners: false }
     animation: { enabled: true, type: "slide", duration: 320 }
     # No AppBar: komorebi reserves the strip via global_work_area_offset (komorebi.json),
     # so tiled windows never sit under the bar. Two reservations would double-stack.
@@ -42,9 +44,14 @@ bars:
     dimensions: { width: "100%", height: 38 }
     padding: { top: 6, left: 8, bottom: 0, right: 8 }
     widgets:
-      left: ["komorebi_workspaces", "komorebi_active_layout"]
-      center: ["clock"]
-      right: ["media", "cava", "volume", "github", "claude_usage", "theme_status", "notifications", "clock_date"]
+      # Each entry below renders as its own floating pill (see styles.css); Groupers exist
+      # purely to put several widgets inside one shared pill.
+      # Time is pinned far left so it never moves: the centre island is media only, and media
+      # comes and goes as music starts and stops. Date lives on the clock's alt label
+      # (right-click) and in the calendar popup, not as a second always-on field.
+      left: ["clock", "nav_group"]
+      center: ["media"]
+      right: ["sound_group", "dev_group"]
 
   # Rich, detail bar on the smaller ASUS 1080p screen (compact labels to fit 1920px).
   rich-bar:
@@ -52,7 +59,7 @@ bars:
     screens: ['*']
     class_name: "yasb-bar rich-bar"
     alignment: { position: "top", align: "center" }
-    blur_effect: { enabled: true, round_corners: true, round_corners_type: "normal" }
+    blur_effect: { enabled: false, round_corners: false }
     animation: { enabled: true, type: "slide", duration: 320 }
     # No AppBar: komorebi reserves the strip via global_work_area_offset (komorebi.json),
     # so tiled windows never sit under the bar. Two reservations would double-stack.
@@ -60,11 +67,47 @@ bars:
     dimensions: { width: "100%", height: 38 }
     padding: { top: 6, left: 8, bottom: 0, right: 8 }
     widgets:
-      left: ["komorebi_workspaces", "active_window"]
-      center: ["clock"]
-      right: ["weather", "system_grouper", "update_check", "dnd", "power_menu", "clock_date"]
+      # Mirrors the light bar: clock pinned far left, and the centre island is the volatile
+      # thing — here the komorebi stack rather than now-playing.
+      left: ["clock", "komorebi_workspaces"]
+      center: ["komorebi_stack"]
+      right: ["weather", "system_grouper", "tray_group"]
 
 widgets:
+  # ---- Pill islands -----------------------------------------------------------------------
+  # Groupers are used here as *visual* containers, not collapsible panels: they let several
+  # widgets share one pill instead of each floating alone. collapse_options is disabled so no
+  # chevron button appears (unlike system_grouper, which is genuinely collapsible).
+  nav_group:
+    type: "yasb.grouper.GrouperWidget"
+    options:
+      class_name: "nav-group"
+      widgets: ["home", "komorebi_workspaces", "komorebi_active_layout"]
+      collapse_options: { enabled: false }
+
+  sound_group:
+    type: "yasb.grouper.GrouperWidget"
+    options:
+      class_name: "sound-group"
+      widgets: ["cava", "volume"]
+      collapse_options: { enabled: false }
+
+  dev_group:
+    type: "yasb.grouper.GrouperWidget"
+    options:
+      class_name: "dev-group"
+      widgets: ["github", "claude_usage", "todo", "notifications"]
+      collapse_options: { enabled: false }
+
+  tray_group:
+    type: "yasb.grouper.GrouperWidget"
+    options:
+      class_name: "tray-group"
+      # theme_status moved here from the dev island: it is an appearance/system control, not a
+      # dev signal, and this is the bar's system cluster.
+      widgets: ["dnd", "theme_status", "systray", "power_menu"]
+      collapse_options: { enabled: false }
+
   komorebi_workspaces:
     type: "komorebi.workspaces.WorkspaceWidget"
     options:
@@ -74,13 +117,16 @@ widgets:
       label_workspace_populated_btn: "{name}"
       hide_empty_workspaces: true
       hide_if_offline: false
+      # Icons only, no names. Empty workspaces are hidden anyway, so every visible chip has
+      # icons to identify it, and the app icons say more at a glance than the name did.
+      # The name is still in the hover tooltip.
       app_icons:
         enabled_populated: true
         enabled_active: true
-        size: 14
+        size: 16
         max_icons: 4
         hide_duplicates: true
-        hide_label: false
+        hide_label: true
 
   komorebi_active_layout:
     type: "komorebi.active_layout.ActiveLayoutWidget"
@@ -90,21 +136,24 @@ widgets:
       layouts:
         ['bsp', 'columns', 'rows', 'grid', 'scrolling', 'vertical_stack',
          'horizontal_stack', 'ultrawide_vertical_stack', 'right_main_vertical_stack']
+      # Written as \u escapes and each one verified to render in CaskaydiaCove NF. Every icon
+      # except grid was previously an empty string — the private-use glyphs had been lost in an
+      # encoding round-trip, so the layout indicator only ever appeared on the grid layout.
       layout_icons:
-        bsp: ""
-        columns: ""
-        rows: ""
-        grid: "󰝘"
-        scrolling: ""
-        vertical_stack: ""
-        horizontal_stack: ""
-        ultrawide_vertical_stack: ""
-        right_main_vertical_stack: ""
-        monocle: ""
-        maximized: ""
-        floating: ""
-        paused: "󰾉"
-        tiling: "󰙀"
+        bsp: "\uf0e8"                        # tree / binary partition
+        columns: "\uf0db"
+        rows: "\uf00b"
+        grid: "\U000F0758"
+        scrolling: "\U000F04E1"
+        vertical_stack: "\U000F0570"         # main pane + stack
+        horizontal_stack: "\uf009"
+        ultrawide_vertical_stack: "\uf00a"
+        right_main_vertical_stack: "\U000F060E"
+        monocle: "\uf065"
+        maximized: "\uf2d0"
+        floating: "\uf2d2"
+        paused: "\uf04c"
+        tiling: "\U000F08A5"
       callbacks:
         on_left: "next_layout"
         on_middle: "toggle_tiling"
@@ -123,49 +172,52 @@ widgets:
       callbacks:
         on_left: "toggle_menu"
 
-  active_window:
-    type: "yasb.active_window.ActiveWindowWidget"
+  # Replaces the old active_window widget on the rich bar: the workspace app-icons already say
+  # what is running, so a single focused title was redundant. This lists every window in the
+  # focused stack and switches between them on click / scroll.
+  komorebi_stack:
+    type: "komorebi.stack.StackWidget"
     options:
-      label: "{win[title]}"
+      label_offline: ""
+      label_window: "{process}"
+      label_window_active: "{title}"
       label_no_window: ""
-      max_length: 40
+      show_icons: "always"
+      icon_size: 14
+      max_length: 12
+      max_length_active: 36
       max_length_ellipsis: "..."
-      monitor_exclusive: true
+      hide_if_offline: true
+      enable_scroll_switching: true
+      rewrite:
+        - pattern: "^(.+?)\\.exe$"
+          replacement: "\\1"
+          case: "title"
 
   clock:
     type: "yasb.clock.ClockWidget"
     options:
       label: "{%H:%M}"
-      label_alt: "{%A, %d %B}"
+      label_alt: "{%A, %d %B}"   # right-click swaps to the date; calendar popup has the rest
       update_interval: 1000
       calendar:
         blur: true
         round_corners: true
-        alignment: "center"
-        direction: "down"
-
-  clock_date:
-    type: "yasb.clock.ClockWidget"
-    options:
-      label: "{%a %d %b}"
-      label_alt: "{%H:%M:%S}"
-      update_interval: 10000
-      calendar:
-        blur: true
-        round_corners: true
-        alignment: "right"
+        alignment: "left"        # clock is pinned far left, so the popup hangs left
         direction: "down"
 
   media:
     type: "yasb.media.MediaWidget"
     options:
-      label: "{title} - {artist}"
-      label_alt: "{title}"
+      label: "<span></span> {title} - {artist}"
+      label_alt: "<span></span> {title}"
       hide_empty: true
       max_field_size:
-        label: 28
-        label_alt: 20
-      show_thumbnail: true
+        label: 40
+        label_alt: 28
+      # Thumbnail off in the bar: yasb paints the album art *behind* the label, which reads as
+      # a blotchy patch beside the clock. The media popup still shows it at 240px.
+      show_thumbnail: false
       thumbnail_padding: 6
       thumbnail_corner_radius: 6
       controls_hide: true
@@ -180,8 +232,10 @@ widgets:
         play: ""
         pause: ""
         unmute: ""
+      # Scrolling is off in the centre island: the marquee's paint region bled under the clock
+      # beside it, and static truncated text reads better next to a fixed-width time anyway.
       scrolling_label:
-        enabled: true
+        enabled: false
         update_interval_ms: 33
       media_menu:
         round_corners: true
@@ -215,11 +269,16 @@ widgets:
     type: "yasb.grouper.GrouperWidget"
     options:
       class_name: "system-grouper"
-      widgets: ["cpu", "memory", "gpu", "disk", "traffic"]
+      # update_check lives in here rather than the tray island so the winget/scoop counts are
+      # behind the collapse instead of permanently on the bar — they are a "when I go looking"
+      # signal, not an ambient one. This grouper starts collapsed.
+      widgets: ["cpu", "memory", "gpu", "disk", "traffic", "update_check"]
       hide_empty: false
       collapse_options:
         enabled: true
-        label_position: "right"
+        # Chevron on the LEFT edge of this pill. On the right it landed next to the systray's
+        # own collapse chevron in the neighbouring pill, so the two read as one control.
+        label_position: "left"
 
   cpu:
     type: "yasb.cpu.CpuWidget"
@@ -404,6 +463,76 @@ widgets:
       callbacks:
         on_left: "toggle_menu"
         on_right: "toggle_label"
+
+  # Scratch task list. Tasks live in ~/.config/yasb/todo.json (not this repo) — deliberately
+  # unversioned, since it is ephemeral and can carry client names. See the public/NDA rule.
+  todo:
+    type: "yasb.todo.TodoWidget"
+    options:
+      label: "<span></span> {count}"
+      label_alt: "<span></span> {count}/{total}"
+      menu:
+        blur: true
+        round_corners: true
+        round_corners_type: "normal"
+        alignment: "right"
+        direction: "down"
+        offset_top: 6
+      callbacks:
+        on_left: "toggle_menu"
+        on_right: "toggle_label"
+
+  # Single leading menu button, replacing a four-icon launcher strip. Two adjacent clusters of
+  # small icons — launchers, then workspace app-icons — read as one undifferentiated row, so the
+  # launchers collapse into one glyph and their targets move into this popup.
+  home:
+    type: "yasb.home.HomeWidget"
+    options:
+      label: "<span></span>"        # hamburger
+      menu_list:
+        - { title: "WezTerm", command: "wezterm-gui" }
+        # Single-quoted: YAML treats backslashes literally there, so Windows paths need no escaping.
+        - { title: "VS Code", command: 'C:\Program Files\Microsoft VS Code\Code.exe' }
+        - { separator: true }
+        - { title: "Projects", path: 'C:\Workspace\Projects' }
+        - { title: "Home", path: "~" }
+        - { title: "Downloads", path: '~\Downloads' }
+        - { separator: true }
+        - { title: "Windows Settings", uri: "ms-settings:" }
+      system_menu: true
+      power_menu: false                   # power lives on the rich bar; keep this bar quiet
+      blur: true
+      round_corners: true
+      round_corners_type: "normal"
+      alignment: "left"
+      direction: "down"
+      offset_top: 6
+
+  # Real Windows tray, folded into the rich bar's trailing island. Unpinned icons live behind
+  # a popup grid so the strip stays a fixed width; alt+click an icon to pin/unpin it.
+  systray:
+    type: "yasb.systray.SystrayWidget"
+    options:
+      class_name: "systray"
+      # Ellipsis rather than a chevron, and on the right edge: the stats grouper next door
+      # uses chevrons for its own collapse, and two adjacent chevrons read as one control.
+      # An ellipsis also says "more icons" more clearly than an arrow does.
+      label_collapsed: ""   # ellipsis-h
+      label_expanded: ""    # chevron-right
+      label_position: "right"
+      icon_size: 16
+      pin_click_modifier: "alt"
+      show_unpinned: false
+      show_unpinned_button: true
+      show_in_popup: true
+      icons_per_row: 6
+      popup:
+        blur: true
+        round_corners: true
+        round_corners_type: "normal"
+        alignment: "right"
+        direction: "down"
+        offset_top: 6
 
   power_menu:
     type: "yasb.power_menu.PowerMenuWidget"

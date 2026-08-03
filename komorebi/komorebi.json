@@ -282,6 +282,16 @@
               "kind": "Exe",
               "id": "Postman.exe",
               "matching_strategy": "Equals"
+            },
+            {
+              "kind": "Exe",
+              "id": "Citrix.DesktopViewer.App.exe",
+              "matching_strategy": "Equals"
+            },
+            {
+              "kind": "Exe",
+              "id": "CDViewer.exe",
+              "matching_strategy": "Equals"
             }
           ]
         },
