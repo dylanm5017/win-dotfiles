@@ -7,25 +7,25 @@
  * CSS variables via var(--name), so the whole bar restyles in lock-step with the
  * terminal, prompt, komorebi borders, and desktop accent. Yasb hot-reloads on save.
  *
- * The bar uses a real frosted/acrylic blur (bars.*.blur_effect in config.yaml), so the
- * strip itself is the glass surface; widgets sit flat on it and the stats Grouper reads
- * as one inset island. Edit layout/shape here; edit colors in the theme .psd1 files.
+ * The bar strip is fully transparent (blur_effect is off in config.yaml) and each widget —
+ * or each Grouper of widgets — floats as its own rounded pill carrying the translucency.
+ * Edit layout/shape here; edit colors in the theme .psd1 files.
  */
 
 /* win-dotfiles:theme:start */
 :root {
-    --bg: #282A36;
-    --surface: #44475A;
-    --surface-alt: #6272A4;
-    --text: #F8F8F2;
-    --subtext: #6272A4;
-    --accent: #BD93F9;
-    --accent-alt: #8BE9FD;
-    --ok: #50FA7B;
-    --warn: #F1FA8C;
-    --err: #FF5555;
-    --island: rgba(40, 42, 54, 0.80);
-    --border: rgba(189, 147, 249, 0.35);
+    --bg: #191724;
+    --surface: #1f1d2e;
+    --surface-alt: #26233a;
+    --text: #e0def4;
+    --subtext: #908caa;
+    --accent: #ebbcba;
+    --accent-alt: #c4a7e7;
+    --ok: #9ccfd8;
+    --warn: #f6c177;
+    --err: #eb6f92;
+    --island: rgba(25, 23, 36, 0.82);
+    --border: rgba(235, 188, 186, 0.35);
 }
 /* win-dotfiles:theme:end */
 
@@ -36,22 +36,62 @@
     color: var(--text);
 }
 
-/* The whole bar is the frosted glass surface (blur is enabled in config). */
+/* ---- Pill/island shell ------------------------------------------------------------------
+   The strip itself is invisible: wallpaper shows through the whole bar and each widget (or
+   Grouper of widgets) floats as its own rounded pill. Blur is OFF in config.yaml for this —
+   a blurred band behind transparent pills reads as a solid bar again. Pills carry the
+   translucency instead, via --island. */
 .yasb-bar {
-    background-color: var(--island);
-    border-bottom: 1px solid var(--border);
-}
-
-/* Widgets sit flat on the glass — no per-widget pill. */
-.widget {
     background-color: transparent;
     border: none;
+}
+
+/* Every top-level widget is its own floating pill. */
+.widget {
+    background-color: var(--island);
+    border: none;
+    border-radius: 12px;
     padding: 0 4px;
-    margin: 0 2px;
+    margin: 3px 3px;
+}
+
+/* ...except widgets nested inside a Grouper, which share the Grouper's pill instead of
+   drawing a second one inside it. */
+.grouper .widget,
+.system-grouper .widget,
+.nav-group .widget,
+.dev-group .widget,
+.tray-group .widget {
+    background-color: transparent;
+    border-radius: 0;
+    margin: 0;
+    padding: 0 2px;
+}
+
+/* Groupers used as visual islands get the same pill treatment as a lone widget. */
+.nav-group,
+.dev-group,
+.tray-group {
+    background-color: var(--island);
+    border: none;
+    border-radius: 12px;
+    padding: 0 4px;
+    margin: 3px 3px;
+}
+
+/* The Grouper's inner container carries its own default surface; the pill is drawn by the
+   Grouper itself, so blank the container out or it shows as a lighter block inside. */
+.grouper .container,
+.system-grouper .container,
+.nav-group .container,
+.dev-group .container,
+.tray-group .container {
+    background-color: transparent;
+    border: none;
 }
 
 .widget .label {
-    padding: 0 8px;
+    padding: 0 6px;
 }
 
 .widget .label:hover {
@@ -195,19 +235,30 @@
     color: var(--surface-alt);
 }
 
-/* ---- System-stats Grouper (one inset frosted island) ---------------------------------- */
+/* ---- System-stats Grouper (one island, but collapsible) -------------------------------- */
 .system-grouper {
-    background-color: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    margin: 4px 4px;
-    padding: 0 2px;
+    background-color: var(--island);
+    border: none;
+    border-radius: 12px;
+    margin: 3px 3px;
+    padding: 0 4px;
 }
 
-.system-grouper .grouper-collapse-button,
-.grouper .grouper-collapse-button {
+/* Collapse chevron. The class is `grouper-button` (an earlier `.grouper-collapse-button`
+   rule here never matched, so it rendered as a default light-grey Qt QPushButton). */
+.system-grouper .grouper-button,
+.grouper .grouper-button {
     color: var(--subtext);
+    background-color: transparent;
+    border: none;
+    border-radius: 8px;
     padding: 0 6px;
+}
+
+.system-grouper .grouper-button:hover,
+.grouper .grouper-button:hover {
+    color: var(--text);
+    background-color: var(--surface);
 }
 
 .cpu-widget .icon,
@@ -401,6 +452,43 @@ QToolTip {
 
 .theme-status .icon {
     color: var(--accent);
+}
+
+/* ---- Quick-launch apps (leading island) ------------------------------------------------ */
+.apps-widget .widget-container .label {
+    color: var(--subtext);
+    font-size: 15px;
+    padding: 0 6px;
+}
+
+.apps-widget .widget-container .label:hover {
+    color: var(--accent);
+    background-color: var(--surface);
+    border-radius: 8px;
+}
+
+/* ---- Windows system tray (trailing island on the rich bar) ----------------------------- */
+.systray .button {
+    border-radius: 8px;
+    padding: 2px;
+    margin: 0 1px;
+}
+
+.systray .button:hover {
+    background-color: var(--surface);
+}
+
+.systray .unpinned-visibility-btn {
+    color: var(--subtext);
+    font-size: 12px;
+    padding: 0 4px;
+}
+
+.systray-popup,
+.systray-popup-container {
+    background-color: var(--bg);
+    border-radius: 12px;
+    padding: 8px;
 }
 
 /* ---- Cava audio visualizer ------------------------------------------------------------ */

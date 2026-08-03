@@ -34,7 +34,9 @@ bars:
     screens: ['primary']
     class_name: "yasb-bar light-bar"
     alignment: { position: "top", align: "center" }
-    blur_effect: { enabled: true, round_corners: true, round_corners_type: "normal" }
+    # Blur off: the strip itself is transparent in this style and each widget group is its
+    # own opaque pill, so a blurred band behind them would defeat the floating look.
+    blur_effect: { enabled: false, round_corners: false }
     animation: { enabled: true, type: "slide", duration: 320 }
     # No AppBar: komorebi reserves the strip via global_work_area_offset (komorebi.json),
     # so tiled windows never sit under the bar. Two reservations would double-stack.
@@ -42,9 +44,11 @@ bars:
     dimensions: { width: "100%", height: 38 }
     padding: { top: 6, left: 8, bottom: 0, right: 8 }
     widgets:
-      left: ["komorebi_workspaces", "komorebi_active_layout"]
+      # Each entry below renders as its own floating pill (see styles.css); Groupers exist
+      # purely to put several widgets inside one shared pill.
+      left: ["nav_group", "media"]
       center: ["clock"]
-      right: ["media", "cava", "volume", "github", "claude_usage", "theme_status", "notifications", "clock_date"]
+      right: ["cava", "volume", "dev_group", "clock_date"]
 
   # Rich, detail bar on the smaller ASUS 1080p screen (compact labels to fit 1920px).
   rich-bar:
@@ -52,7 +56,7 @@ bars:
     screens: ['*']
     class_name: "yasb-bar rich-bar"
     alignment: { position: "top", align: "center" }
-    blur_effect: { enabled: true, round_corners: true, round_corners_type: "normal" }
+    blur_effect: { enabled: false, round_corners: false }
     animation: { enabled: true, type: "slide", duration: 320 }
     # No AppBar: komorebi reserves the strip via global_work_area_offset (komorebi.json),
     # so tiled windows never sit under the bar. Two reservations would double-stack.
@@ -62,9 +66,34 @@ bars:
     widgets:
       left: ["komorebi_workspaces", "active_window"]
       center: ["clock"]
-      right: ["weather", "system_grouper", "update_check", "dnd", "power_menu", "clock_date"]
+      right: ["weather", "system_grouper", "tray_group", "clock_date"]
 
 widgets:
+  # ---- Pill islands -----------------------------------------------------------------------
+  # Groupers are used here as *visual* containers, not collapsible panels: they let several
+  # widgets share one pill instead of each floating alone. collapse_options is disabled so no
+  # chevron button appears (unlike system_grouper, which is genuinely collapsible).
+  nav_group:
+    type: "yasb.grouper.GrouperWidget"
+    options:
+      class_name: "nav-group"
+      widgets: ["apps", "komorebi_workspaces", "komorebi_active_layout"]
+      collapse_options: { enabled: false }
+
+  dev_group:
+    type: "yasb.grouper.GrouperWidget"
+    options:
+      class_name: "dev-group"
+      widgets: ["github", "claude_usage", "theme_status", "notifications"]
+      collapse_options: { enabled: false }
+
+  tray_group:
+    type: "yasb.grouper.GrouperWidget"
+    options:
+      class_name: "tray-group"
+      widgets: ["update_check", "dnd", "systray", "power_menu"]
+      collapse_options: { enabled: false }
+
   komorebi_workspaces:
     type: "komorebi.workspaces.WorkspaceWidget"
     options:
@@ -404,6 +433,45 @@ widgets:
       callbacks:
         on_left: "toggle_menu"
         on_right: "toggle_label"
+
+  # Leading quick-launch cluster on the light bar. `search` / `quick_settings` /
+  # `notification_center` are Yasb built-in launch keywords, not executables.
+  apps:
+    type: "yasb.applications.ApplicationsWidget"
+    options:
+      class_name: "apps-widget"
+      label: "{data}"
+      tooltip: true
+      # Icons are written as \u escapes, not literal glyphs: Nerd Font private-use-area
+      # characters do not survive every editor/encoding round-trip.
+      app_list:
+        - { icon: "\uf002", launch: "search", name: "Search" }             # search
+        - { icon: "\uf120", launch: "wezterm-gui", name: "WezTerm" }       # terminal
+        - { icon: "\U000F0A1E", launch: "C:\\Program Files\\Microsoft VS Code\\Code.exe", name: "VS Code" }
+        - { icon: "\uf07b", launch: "explorer", name: "File Explorer" }    # folder
+
+  # Real Windows tray, folded into the rich bar's trailing island. Unpinned icons live behind
+  # a popup grid so the strip stays a fixed width; alt+click an icon to pin/unpin it.
+  systray:
+    type: "yasb.systray.SystrayWidget"
+    options:
+      class_name: "systray"
+      label_collapsed: ""   # chevron-left
+      label_expanded: ""    # chevron-right
+      label_position: "left"
+      icon_size: 16
+      pin_click_modifier: "alt"
+      show_unpinned: false
+      show_unpinned_button: true
+      show_in_popup: true
+      icons_per_row: 6
+      popup:
+        blur: true
+        round_corners: true
+        round_corners_type: "normal"
+        alignment: "right"
+        direction: "down"
+        offset_top: 6
 
   power_menu:
     type: "yasb.power_menu.PowerMenuWidget"
