@@ -140,21 +140,22 @@
     padding: 0 2px;
 }
 
-/* Buttons are labelled with workspace names (DEV, BROWSER, ...) rather than indices, so they run
-   roughly 4x wider than digits did. Tighter type and padding keeps the row within the 1080p bar. */
+/* Icon-only chips (names are hidden in config). Each workspace is a small rounded well rather
+   than bare icons on the pill, so the row reads as discrete, clickable groups — otherwise four
+   app icons and four more app icons run together into one undifferentiated strip. */
 .komorebi-workspaces .ws-btn {
     color: var(--subtext);
-    background-color: transparent;
+    background-color: var(--surface);
     border: none;
-    border-radius: 8px;
+    border-radius: 9px;
     font-size: 12px;
-    margin: 3px 1px;
-    padding: 0 5px;
+    margin: 4px 3px;
+    padding: 0 8px;
 }
 
 .komorebi-workspaces .ws-btn:hover {
     color: var(--text);
-    background-color: var(--surface);
+    background-color: var(--surface-alt);
 }
 
 .komorebi-workspaces .ws-btn.populated {
@@ -484,17 +485,39 @@ QToolTip {
     color: var(--accent);
 }
 
-/* ---- Quick-launch apps (leading island) ------------------------------------------------ */
-.apps-widget .widget-container .label {
+/* ---- Home menu (leading button) --------------------------------------------------------- */
+/* Deliberately the quietest thing in the nav island: it is a door, not a status. */
+.home-widget .icon {
     color: var(--subtext);
-    font-size: 15px;
-    padding: 0 6px;
+    font-size: 16px;
+    padding: 0 8px;
 }
 
-.apps-widget .widget-container .label:hover {
+.home-widget .icon:hover {
     color: var(--accent);
-    background-color: var(--surface);
+}
+
+.home-menu {
+    background-color: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 8px;
+}
+
+.home-menu .menu-item {
+    color: var(--text);
+    padding: 9px 16px;
     border-radius: 8px;
+}
+
+.home-menu .menu-item:hover {
+    background-color: var(--surface);
+}
+
+.home-menu .separator {
+    background-color: var(--surface-alt);
+    max-height: 1px;
+    margin: 6px 8px;
 }
 
 /* ---- Todo ------------------------------------------------------------------------------ */

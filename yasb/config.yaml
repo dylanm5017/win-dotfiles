@@ -82,7 +82,7 @@ widgets:
     type: "yasb.grouper.GrouperWidget"
     options:
       class_name: "nav-group"
-      widgets: ["apps", "komorebi_workspaces", "komorebi_active_layout"]
+      widgets: ["home", "komorebi_workspaces", "komorebi_active_layout"]
       collapse_options: { enabled: false }
 
   sound_group:
@@ -105,7 +105,7 @@ widgets:
       class_name: "tray-group"
       # theme_status moved here from the dev island: it is an appearance/system control, not a
       # dev signal, and this is the bar's system cluster.
-      widgets: ["update_check", "dnd", "theme_status", "systray", "power_menu"]
+      widgets: ["dnd", "theme_status", "systray", "power_menu"]
       collapse_options: { enabled: false }
 
   komorebi_workspaces:
@@ -117,13 +117,16 @@ widgets:
       label_workspace_populated_btn: "{name}"
       hide_empty_workspaces: true
       hide_if_offline: false
+      # Icons only, no names. Empty workspaces are hidden anyway, so every visible chip has
+      # icons to identify it, and the app icons say more at a glance than the name did.
+      # The name is still in the hover tooltip.
       app_icons:
         enabled_populated: true
         enabled_active: true
-        size: 14
+        size: 16
         max_icons: 4
         hide_duplicates: true
-        hide_label: false
+        hide_label: true
 
   komorebi_active_layout:
     type: "komorebi.active_layout.ActiveLayoutWidget"
@@ -133,21 +136,24 @@ widgets:
       layouts:
         ['bsp', 'columns', 'rows', 'grid', 'scrolling', 'vertical_stack',
          'horizontal_stack', 'ultrawide_vertical_stack', 'right_main_vertical_stack']
+      # Written as \u escapes and each one verified to render in CaskaydiaCove NF. Every icon
+      # except grid was previously an empty string — the private-use glyphs had been lost in an
+      # encoding round-trip, so the layout indicator only ever appeared on the grid layout.
       layout_icons:
-        bsp: ""
-        columns: ""
-        rows: ""
-        grid: "󰝘"
-        scrolling: ""
-        vertical_stack: ""
-        horizontal_stack: ""
-        ultrawide_vertical_stack: ""
-        right_main_vertical_stack: ""
-        monocle: ""
-        maximized: ""
-        floating: ""
-        paused: "󰾉"
-        tiling: "󰙀"
+        bsp: "\uf0e8"                        # tree / binary partition
+        columns: "\uf0db"
+        rows: "\uf00b"
+        grid: "\U000F0758"
+        scrolling: "\U000F04E1"
+        vertical_stack: "\U000F0570"         # main pane + stack
+        horizontal_stack: "\uf009"
+        ultrawide_vertical_stack: "\uf00a"
+        right_main_vertical_stack: "\U000F060E"
+        monocle: "\uf065"
+        maximized: "\uf2d0"
+        floating: "\uf2d2"
+        paused: "\uf04c"
+        tiling: "\U000F08A5"
       callbacks:
         on_left: "next_layout"
         on_middle: "toggle_tiling"
@@ -263,7 +269,10 @@ widgets:
     type: "yasb.grouper.GrouperWidget"
     options:
       class_name: "system-grouper"
-      widgets: ["cpu", "memory", "gpu", "disk", "traffic"]
+      # update_check lives in here rather than the tray island so the winget/scoop counts are
+      # behind the collapse instead of permanently on the bar — they are a "when I go looking"
+      # signal, not an ambient one. This grouper starts collapsed.
+      widgets: ["cpu", "memory", "gpu", "disk", "traffic", "update_check"]
       hide_empty: false
       collapse_options:
         enabled: true
@@ -473,21 +482,31 @@ widgets:
         on_left: "toggle_menu"
         on_right: "toggle_label"
 
-  # Leading quick-launch cluster on the light bar. `search` / `quick_settings` /
-  # `notification_center` are Yasb built-in launch keywords, not executables.
-  apps:
-    type: "yasb.applications.ApplicationsWidget"
+  # Single leading menu button, replacing a four-icon launcher strip. Two adjacent clusters of
+  # small icons — launchers, then workspace app-icons — read as one undifferentiated row, so the
+  # launchers collapse into one glyph and their targets move into this popup.
+  home:
+    type: "yasb.home.HomeWidget"
     options:
-      class_name: "apps-widget"
-      label: "{data}"
-      tooltip: true
-      # Icons are written as \u escapes, not literal glyphs: Nerd Font private-use-area
-      # characters do not survive every editor/encoding round-trip.
-      app_list:
-        - { icon: "\uf002", launch: "search", name: "Search" }             # search
-        - { icon: "\uf120", launch: "wezterm-gui", name: "WezTerm" }       # terminal
-        - { icon: "\U000F0A1E", launch: "C:\\Program Files\\Microsoft VS Code\\Code.exe", name: "VS Code" }
-        - { icon: "\uf07b", launch: "explorer", name: "File Explorer" }    # folder
+      label: "<span></span>"        # hamburger
+      menu_list:
+        - { title: "WezTerm", command: "wezterm-gui" }
+        # Single-quoted: YAML treats backslashes literally there, so Windows paths need no escaping.
+        - { title: "VS Code", command: 'C:\Program Files\Microsoft VS Code\Code.exe' }
+        - { separator: true }
+        - { title: "Projects", path: 'C:\Workspace\Projects' }
+        - { title: "Home", path: "~" }
+        - { title: "Downloads", path: '~\Downloads' }
+        - { separator: true }
+        - { title: "Windows Settings", uri: "ms-settings:" }
+      system_menu: true
+      power_menu: false                   # power lives on the rich bar; keep this bar quiet
+      blur: true
+      round_corners: true
+      round_corners_type: "normal"
+      alignment: "left"
+      direction: "down"
+      offset_top: 6
 
   # Real Windows tray, folded into the rich bar's trailing island. Unpinned icons live behind
   # a popup grid so the strip stays a fixed width; alt+click an icon to pin/unpin it.
