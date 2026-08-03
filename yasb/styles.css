@@ -61,7 +61,10 @@
 .system-grouper .widget,
 .nav-group .widget,
 .dev-group .widget,
-.tray-group .widget {
+.tray-group .widget,
+.now-playing .widget,
+.time-group .widget,
+.sound-group .widget {
     background-color: transparent;
     border-radius: 0;
     margin: 0;
@@ -71,7 +74,10 @@
 /* Groupers used as visual islands get the same pill treatment as a lone widget. */
 .nav-group,
 .dev-group,
-.tray-group {
+.tray-group,
+.now-playing,
+.time-group,
+.sound-group {
     background-color: var(--island);
     border: none;
     border-radius: 12px;
@@ -85,7 +91,10 @@
 .system-grouper .container,
 .nav-group .container,
 .dev-group .container,
-.tray-group .container {
+.tray-group .container,
+.now-playing .container,
+.time-group .container,
+.sound-group .container {
     background-color: transparent;
     border: none;
 }
@@ -208,6 +217,28 @@
 /* Larger centre clock on the primary (light) bar only */
 .light-bar .clock-widget .label {
     font-size: 18px;   /* base is 13px */
+}
+
+/* The date sits beside the time in the same island, so it reads as the secondary line: normal
+   weight, muted, and never scaled up with the light-bar clock. Separation is padding, not a
+   border — Qt would not paint a border-left on this QLabel. */
+.clock-date .label,
+.light-bar .clock-date .label {
+    color: var(--subtext);
+    font-size: 13px;
+    font-weight: 500;
+    padding-left: 12px;
+}
+
+.clock-date .label:hover {
+    color: var(--text);
+}
+
+/* Now-playing island: the media title is the quiet partner to the time, and the album art
+   needs a little air from the pill edge. */
+.now-playing .media-widget .label {
+    color: var(--subtext);
+    font-size: 13px;
 }
 
 /* Colored, clickable widgets keep their identity hue on hover (the generic label:hover
@@ -467,6 +498,87 @@ QToolTip {
     border-radius: 8px;
 }
 
+/* ---- Todo ------------------------------------------------------------------------------ */
+.todo-widget .label {
+    color: var(--subtext);
+}
+
+.todo-widget .icon {
+    color: var(--accent);
+}
+
+.todo-menu .header {
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.todo-menu .task-item {
+    background-color: var(--surface);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin: 3px 0;
+}
+
+.todo-menu .task-item .title {
+    color: var(--text);
+}
+
+.todo-menu .task-item .description,
+.todo-menu .task-item .date-text,
+.todo-menu .task-item .category-text {
+    color: var(--subtext);
+    font-size: 13px;
+}
+
+/* Priority accents on the left edge, so the list scans without reading every label. */
+.todo-menu .task-item.urgent    { border-left: 3px solid var(--err); }
+.todo-menu .task-item.important { border-left: 3px solid var(--warn); }
+.todo-menu .task-item.today     { border-left: 3px solid var(--accent); }
+.todo-menu .task-item.soon      { border-left: 3px solid var(--accent-alt); }
+
+.todo-menu .task-item.completed .title {
+    color: var(--subtext);
+}
+
+.todo-menu .add-task-button,
+.todo-menu .tab-buttons,
+.todo-menu .app-dialog .button {
+    color: var(--text);
+    background-color: var(--surface);
+    border: none;
+    border-radius: 8px;
+    padding: 8px 14px;
+    margin: 3px;
+}
+
+.todo-menu .add-task-button:hover,
+.todo-menu .tab-buttons:hover,
+.todo-menu .app-dialog .button:hover {
+    background-color: var(--accent);
+    color: var(--bg);
+}
+
+.todo-menu .no-tasks,
+.todo-menu .no-tasks-icon {
+    color: var(--subtext);
+}
+
+.app-dialog {
+    background-color: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+}
+
+.app-dialog .title-field,
+.app-dialog .desc-field {
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 8px 10px;
+}
+
 /* ---- Windows system tray (trailing island on the rich bar) ----------------------------- */
 .systray .button {
     border-radius: 8px;
@@ -649,6 +761,7 @@ QToolTip {
 .audio-menu,
 .weather-card,
 .notification-popup,
+.todo-menu,
 .github-menu,
 .claude-usage-menu {
     padding: 18px;
