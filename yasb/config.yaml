@@ -46,8 +46,11 @@ bars:
     widgets:
       # Each entry below renders as its own floating pill (see styles.css); Groupers exist
       # purely to put several widgets inside one shared pill.
-      left: ["nav_group"]
-      center: ["now_playing"]
+      # Time is pinned far left so it never moves: the centre island is media only, and media
+      # comes and goes as music starts and stops. Date lives on the clock's alt label
+      # (right-click) and in the calendar popup, not as a second always-on field.
+      left: ["clock", "nav_group"]
+      center: ["media"]
       right: ["sound_group", "dev_group"]
 
   # Rich, detail bar on the smaller ASUS 1080p screen (compact labels to fit 1920px).
@@ -64,8 +67,10 @@ bars:
     dimensions: { width: "100%", height: 38 }
     padding: { top: 6, left: 8, bottom: 0, right: 8 }
     widgets:
-      left: ["komorebi_workspaces", "active_window"]
-      center: ["time_group"]
+      # Mirrors the light bar: clock pinned far left, and the centre island is the volatile
+      # thing — here the komorebi stack rather than now-playing.
+      left: ["clock", "komorebi_workspaces"]
+      center: ["komorebi_stack"]
       right: ["weather", "system_grouper", "tray_group"]
 
 widgets:
@@ -80,25 +85,6 @@ widgets:
       widgets: ["apps", "komorebi_workspaces", "komorebi_active_layout"]
       collapse_options: { enabled: false }
 
-  # Centre island on the light bar: now-playing, then time, then date. Media hides itself when
-  # nothing is playing (hide_empty), so the island collapses to time + date when idle — which
-  # does mean the clock shifts left/right as music starts and stops. If that bothers you, give
-  # .media-widget a fixed min-width in styles.css and set the media widget's hide_empty: false.
-  now_playing:
-    type: "yasb.grouper.GrouperWidget"
-    options:
-      class_name: "now-playing"
-      widgets: ["media", "clock", "clock_date"]
-      collapse_options: { enabled: false }
-
-  # Same time + date pairing on the rich bar, which has no media widget.
-  time_group:
-    type: "yasb.grouper.GrouperWidget"
-    options:
-      class_name: "time-group"
-      widgets: ["clock", "clock_date"]
-      collapse_options: { enabled: false }
-
   sound_group:
     type: "yasb.grouper.GrouperWidget"
     options:
@@ -110,14 +96,16 @@ widgets:
     type: "yasb.grouper.GrouperWidget"
     options:
       class_name: "dev-group"
-      widgets: ["github", "claude_usage", "todo", "theme_status", "notifications"]
+      widgets: ["github", "claude_usage", "todo", "notifications"]
       collapse_options: { enabled: false }
 
   tray_group:
     type: "yasb.grouper.GrouperWidget"
     options:
       class_name: "tray-group"
-      widgets: ["update_check", "dnd", "systray", "power_menu"]
+      # theme_status moved here from the dev island: it is an appearance/system control, not a
+      # dev signal, and this is the bar's system cluster.
+      widgets: ["update_check", "dnd", "theme_status", "systray", "power_menu"]
       collapse_options: { enabled: false }
 
   komorebi_workspaces:
@@ -178,39 +166,38 @@ widgets:
       callbacks:
         on_left: "toggle_menu"
 
-  active_window:
-    type: "yasb.active_window.ActiveWindowWidget"
+  # Replaces the old active_window widget on the rich bar: the workspace app-icons already say
+  # what is running, so a single focused title was redundant. This lists every window in the
+  # focused stack and switches between them on click / scroll.
+  komorebi_stack:
+    type: "komorebi.stack.StackWidget"
     options:
-      label: "{win[title]}"
+      label_offline: ""
+      label_window: "{process}"
+      label_window_active: "{title}"
       label_no_window: ""
-      max_length: 40
+      show_icons: "always"
+      icon_size: 14
+      max_length: 12
+      max_length_active: 36
       max_length_ellipsis: "..."
-      monitor_exclusive: true
+      hide_if_offline: true
+      enable_scroll_switching: true
+      rewrite:
+        - pattern: "^(.+?)\\.exe$"
+          replacement: "\\1"
+          case: "title"
 
   clock:
     type: "yasb.clock.ClockWidget"
     options:
       label: "{%H:%M}"
-      label_alt: "{%A, %d %B}"
+      label_alt: "{%A, %d %B}"   # right-click swaps to the date; calendar popup has the rest
       update_interval: 1000
       calendar:
         blur: true
         round_corners: true
-        alignment: "center"
-        direction: "down"
-
-  # Secondary line inside the centre island (styled smaller/dimmer than the time via .clock-date).
-  clock_date:
-    type: "yasb.clock.ClockWidget"
-    options:
-      class_name: "clock-date"
-      label: "{%a %d %b}"
-      label_alt: "{%H:%M:%S}"
-      update_interval: 10000
-      calendar:
-        blur: true
-        round_corners: true
-        alignment: "center"
+        alignment: "left"        # clock is pinned far left, so the popup hangs left
         direction: "down"
 
   media:
@@ -280,7 +267,9 @@ widgets:
       hide_empty: false
       collapse_options:
         enabled: true
-        label_position: "right"
+        # Chevron on the LEFT edge of this pill. On the right it landed next to the systray's
+        # own collapse chevron in the neighbouring pill, so the two read as one control.
+        label_position: "left"
 
   cpu:
     type: "yasb.cpu.CpuWidget"
@@ -506,9 +495,12 @@ widgets:
     type: "yasb.systray.SystrayWidget"
     options:
       class_name: "systray"
-      label_collapsed: ""   # chevron-left
+      # Ellipsis rather than a chevron, and on the right edge: the stats grouper next door
+      # uses chevrons for its own collapse, and two adjacent chevrons read as one control.
+      # An ellipsis also says "more icons" more clearly than an arrow does.
+      label_collapsed: ""   # ellipsis-h
       label_expanded: ""    # chevron-right
-      label_position: "left"
+      label_position: "right"
       icon_size: 16
       pin_click_modifier: "alt"
       show_unpinned: false

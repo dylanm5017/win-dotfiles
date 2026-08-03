@@ -62,8 +62,6 @@
 .nav-group .widget,
 .dev-group .widget,
 .tray-group .widget,
-.now-playing .widget,
-.time-group .widget,
 .sound-group .widget {
     background-color: transparent;
     border-radius: 0;
@@ -75,8 +73,6 @@
 .nav-group,
 .dev-group,
 .tray-group,
-.now-playing,
-.time-group,
 .sound-group {
     background-color: var(--island);
     border: none;
@@ -92,8 +88,6 @@
 .nav-group .container,
 .dev-group .container,
 .tray-group .container,
-.now-playing .container,
-.time-group .container,
 .sound-group .container {
     background-color: transparent;
     border: none;
@@ -203,12 +197,39 @@
     font-size: 15px;
 }
 
-/* ---- Focused window + clocks ---------------------------------------------------------- */
-.active-window-widget .label,
-.active-window-widget .label.active {
-    color: var(--text);
+/* ---- Komorebi stack (rich bar centre) --------------------------------------------------- */
+/* Reads like the workspace row: inactive windows recede, the focused one is accent-filled. */
+.komorebi-stack .window {
+    color: var(--subtext);
+    background-color: transparent;
+    border: none;
+    border-radius: 8px;
+    font-size: 12px;
+    margin: 3px 1px;
+    padding: 0 6px;
 }
 
+.komorebi-stack .window:hover {
+    color: var(--text);
+    background-color: var(--surface);
+}
+
+/* Accent text on a quiet surface, not an accent fill: unlike the short workspace names, the
+   focused title runs up to 36 characters and a solid accent block that wide shouts. */
+.komorebi-stack .window.active {
+    background-color: var(--surface);
+    font-weight: 700;
+}
+
+.komorebi-stack .window.active .label {
+    color: var(--accent);
+}
+
+.komorebi-stack .offline-status {
+    color: var(--err);
+}
+
+/* ---- Clocks ----------------------------------------------------------------------------- */
 .clock-widget .label {
     color: var(--accent);
     font-weight: 700;
@@ -217,28 +238,6 @@
 /* Larger centre clock on the primary (light) bar only */
 .light-bar .clock-widget .label {
     font-size: 18px;   /* base is 13px */
-}
-
-/* The date sits beside the time in the same island, so it reads as the secondary line: normal
-   weight, muted, and never scaled up with the light-bar clock. Separation is padding, not a
-   border — Qt would not paint a border-left on this QLabel. */
-.clock-date .label,
-.light-bar .clock-date .label {
-    color: var(--subtext);
-    font-size: 13px;
-    font-weight: 500;
-    padding-left: 12px;
-}
-
-.clock-date .label:hover {
-    color: var(--text);
-}
-
-/* Now-playing island: the media title is the quiet partner to the time, and the album art
-   needs a little air from the pill edge. */
-.now-playing .media-widget .label {
-    color: var(--subtext);
-    font-size: 13px;
 }
 
 /* Colored, clickable widgets keep their identity hue on hover (the generic label:hover
