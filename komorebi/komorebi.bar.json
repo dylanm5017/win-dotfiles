@@ -25,9 +25,9 @@
     "transparency_alpha": 217
   },
   "theme": {
-    "palette": "Base16",
-    "name": "Dracula",
-    "accent": "Base0E"
+    "palette": "Catppuccin",
+    "name": "Mocha",
+    "accent": "Mauve"
   },
   "left_widgets": [
     {

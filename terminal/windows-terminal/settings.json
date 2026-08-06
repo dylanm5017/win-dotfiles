@@ -245,7 +245,7 @@
 
     "profiles": {
         "defaults": {
-            "colorScheme": "Dracula",
+            "colorScheme": "Catppuccin Mocha",
             "cursorShape": "filledBox",
             "useAcrylic": true,
             "opacity": 95,
