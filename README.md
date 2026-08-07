@@ -1,487 +1,83 @@
 # Windows Dotfiles
 
-Personal Windows shell configuration.
+Personal Windows 11 desktop, version-controlled end to end — tiling window manager, status bar,
+PowerShell profile, and a single palette that themes all of it in lock-step.
 
-## Screenshots
+One command rebuilds the machine; one command (`theme mocha`) recolors the terminal, prompt, window
+borders, status bar, editor chrome, Spotify, launcher, context menu, and desktop wallpaper together.
 
-Not yet added — see `docs/screenshots/README.md` for the capture checklist. Once filled in, this
-section will show the desktop (Yasb bars + komorebi tiling), a themed terminal, Flow Launcher, and the
-Nilesoft Shell context menu.
+## The stack
 
-<!--
-![Desktop](docs/screenshots/desktop.png)
-![Terminal](docs/screenshots/terminal.png)
-![Flow Launcher](docs/screenshots/flow-launcher.png)
-![Context menu](docs/screenshots/context-menu.png)
--->
+| Layer | What | Config |
+| --- | --- | --- |
+| Window manager | [komorebi](https://github.com/LGUG2Z/komorebi) + whkd — 10 named workspaces, monitor-agnostic binds | `komorebi/` |
+| Status bar | [Yasb](https://github.com/amnweb/yasb) — two asymmetric frosted-glass bars | `yasb/` |
+| Shell | PowerShell 7, modular `profile.d/` loader, [Starship](https://starship.rs) prompt | `powershell/`, `starship.toml` |
+| Terminal | Windows Terminal (overlay-merged) + WezTerm (workspaces, shell integration) | `terminal/` |
+| Launcher | [Flow Launcher](https://www.flowlauncher.com) on `Alt+Space`, palette-themed | `flowlauncher/` |
+| Theming | 10 palettes driving every surface from one `.psd1` | `themes/`, `wallpapers/` |
+| Windows itself | Runtime mods, re-skinned context menu, host tuning + debloat | `windhawk/`, `nilesoft-shell/`, `windows/` |
+| Packages | Scoop + winget manifests, idempotent bootstrap | `packages/`, `install.ps1` |
 
-Tracked:
-- PowerShell profile loader and profile.d scripts
-- Project registry and PowerShell config
-- Starship config and shell helper functions/aliases
-- Package manifests (`packages/scoop.json`, `packages/winget.json`) and `install.ps1`
-- Terminal configs: Windows Terminal styling overlay and WezTerm config (`terminal/`)
-- Window manager configs (`komorebi/`)
-- Status bar config (`yasb/`, the primary bar) and the Windhawk mod list (`windhawk/`)
-- App theming driven by the active palette: VSCode overlay (`vscode/`), the Spicetify Spotify theme (`spicetify/`), the Flow Launcher theme (`flowlauncher/`), and the Nilesoft Shell context-menu theme (`nilesoft-shell/`)
-- Theme palettes (`themes/`), generated wallpapers (`wallpapers/`), and the fastfetch banner (`fastfetch/`)
+## Quick start
 
-Not tracked:
-- Installed PowerShell Gallery modules
-- Caches
-- Generated reports
-- Local secrets
+```powershell
+git clone git@github.com:dylanm5017/win-dotfiles.git
+cd win-dotfiles
+./install.ps1        # run elevated so the elevated-only tuning applies
+```
 
-## Setup / bootstrap
+`install.ps1` is idempotent — safe to re-run. It installs the Scoop and winget package sets, links
+the PowerShell profile, then runs `winsmooth -Apply` (which links the komorebi/terminal/WezTerm/Yasb
+configs and tunes the host).
 
-`install.ps1` rebuilds the environment from this repo. It is idempotent — safe to re-run.
-
-- `./install.ps1` installs the Scoop and winget package sets, links the PowerShell profile,
-  then runs `winsmooth -Apply` (which links the komorebi/terminal/WezTerm configs and tunes
-  the host). Run it from an elevated PowerShell so the elevated-only tuning applies.
 - Switches: `-SkipScoop`, `-SkipWinget`, `-SkipFonts`, `-SkipWinsmooth`.
-- `packages/scoop.json` is the Scoop manifest (buckets + apps); `packages/winget.json` is a
-  curated winget set (toolchain + the comfort apps `winsmooth` manages, minus machine-specific
-  noise). `scoop import packages/scoop.json` / `winget import packages/winget.json` re-create them.
+- `packages/scoop.json` is the Scoop manifest (buckets + apps); `packages/winget.json` is a curated
+  winget set (toolchain + the comfort apps `winsmooth` manages, minus machine-specific noise).
+  `scoop import packages/scoop.json` / `winget import packages/winget.json` re-create them.
 - `pkgsync` (alias `pkglist`) refreshes `packages/scoop.json` from what is currently installed,
   keeping the clean shape so diffs stay meaningful. `winget.json` is hand-curated and left alone.
 
-## PowerShell profile
+Health check afterwards: `dotdoctor` (repo health) and `wincheck` (Windows friction).
 
-`powershell/profile.ps1` is a thin loader; the real configuration is split into small,
-single-concern modules under `powershell/profile.d/`, dot-sourced in the order listed in the
-loader's `$ProfileScripts` array. The two-digit prefix encodes both order and rough grouping:
+## Documentation
 
-- **00–45 core**: environment/paths (`00-env`, `10-path`), module imports (`20-modules`),
-  history (`30-history`), prompt (`40-prompt`), theme switcher (`45-theme`).
-- **48 lib**: `48-fzf.ps1` — the shared fzf helper library (defaults, `New-FzfArgs`, preview
-  commands, and the `Select-FromNumberedMenu` fallback). Loads before every consumer.
-- **50–90 commands**: navigation + zoxide (`50-navigation`), aliases (`60-aliases`), alias tips
-  (`65-alias-tips`), keybindings (`70-keybindings`), bootstrap (`80-bootstrap`), SQL helpers
-  (`90-sql`).
-- **100–170 workflow**: project marks/registry (`100`, `160`), dev + workflow tooling (`110`,
-  `115`), completions (`130`), the reliability suite (`140`), workstation tuning (`150`), and the
-  login greeting (`170`, numbered last).
-
-Conventions, so new modules stay consistent:
-
-- **Naming**: internal helpers are PowerShell `Verb-Noun` (`Get-`, `Set-`, `Test-`, `Invoke-`…);
-  the short, CLI-style commands you actually type (`gs`, `ni`, `dev`, `mark`, `td`) are exposed as
-  aliases onto those functions, never as the function name itself.
-- **Tool checks**: use the single `Test-Command` helper (defined in `00-env.ps1`) to guard on a
-  command's presence — `Test-Command git -Application` for external executables, `Test-Command
-  Some-Function` for cmdlets/functions. Prefer it over inline `Get-Command … -ErrorAction
-  SilentlyContinue` for existence checks.
-- **Local / private additions**: machine-specific or project-specific helpers go in the
-  gitignored `powershell/profile.local.ps1` (sourced last), and private project group names go in
-  `powershell/projects.local.json` — neither is committed. Set `WINDOTFILES_PROFILE_DEBUG=1` to
-  print per-module load timings, or run `profileperf` for a timing table.
-
-### Alias tips
-
-`65-alias-tips.ps1` is this profile's take on zsh's `you-should-use`: type the long form of
-something that has a shortcut and the shortcut is printed under the line, so the muscle memory
-builds itself.
-
-```
-❯ git status --short
-  tip gs  →  git status
-```
-
-The index is derived from the live session rather than a hand-maintained list — every `Alias:`
-entry, plus every single-statement passthrough function (`function gs { git status @args }`) whose
-body is parsed out of its AST. Adding a wrapper to `60-aliases.ps1` or `profile.local.ps1` is
-enough to start getting tips for it; when two shortcuts tie, the shortest wins.
-
-- `aliastips` lists everything the index knows, `aliastips git` filters it.
-- Tips fire from the PSReadLine accept-line hook in `30-history.ps1`, so they land between the
-  command and its output, and a failure there can never take out the prompt.
-- `$env:WINDOTFILES_ALIAS_TIPS = 'off'` mutes them; `WINDOTFILES_ALIAS_TIPS_MIN` sets how many
-  characters a shortcut has to save before it's worth mentioning (default `4`).
-
-`aliasdoctor` is the same idea pointed the other way: it reads the PSReadLine history file, finds
-the command prefixes you retype constantly that have *no* shortcut, and ranks them by the typing an
-alias would have saved. `aliasdoctor -AsSnippet` emits paste-ready definitions for `60-aliases.ps1`:
-
-```
-function gch { git checkout @args }   # 1305x, saves 11745 chars
-```
-
-Proposed names are initials, Verb-Noun aware, and checked against the live session — when `gc` is
-taken the last word grows a letter (`gch`) rather than falling back to a useless `gc2`. Flags and
-paths don't contribute letters, single-letter names are refused, and `cd`-style navigation is
-skipped entirely because the project registry (`p`, `goto`, `mark`, `workon`) already covers it.
-Tune with `-Top`, `-MinCount`. It pairs with `histdoctor`, which reports the opposite failure: the
-commands you run often that no longer resolve.
-
-Savings are scored against the shortest form you can *already* type, not the raw text: once `gch`
-exists, `git checkout -b` is really `gch -b`, so it stops claiming a ten-character win for two.
-
-The `CoveredBy` column names an existing wrapper that already speaks to the command — `fbemu` for
-`firebase emulators:start …`, `gpub` for `git push --set-upstream origin`. Those wrappers are full
-commands with param blocks and guards, so the tip index can't see them; a second pass
-(`aliastips -Wrapped`) digs the tool invocations out of their bodies. It flags rather than hides,
-because `gpub` really does replace that push while `gprune` only touches part of `git branch` —
-and it can't help where a wrapper builds its arguments dynamically, as `fbdeploy` does, so a
-suggestion with an empty `CoveredBy` still deserves a glance. That coverage deliberately never
-feeds the tips themselves: `gsync` runs several git commands, and "you typed `git fetch`, use
-`gsync`" would be wrong.
-
-### Keybindings
-
-`70-keybindings.ps1` fills in what `EditMode Windows` leaves unbound, in `bash`/`zsh` order:
-
-| Key | Does |
+| Doc | Covers |
 | --- | --- |
-| `↑` / `↓` | History search filtered by what's typed — `git` + `↑` walks only git commands |
-| `Alt+.` | Yank the last argument of the previous command |
-| `Ctrl+w` / `Ctrl+Backspace` | Delete the word behind the cursor |
-| `Alt+d` | Delete the word ahead of the cursor |
-| `Ctrl+u` / `Ctrl+k` | Delete to start / end of line |
-| `Shift+Enter` | Add a line without submitting |
-| `Tab` / `Shift+Tab` | Completion menu; `Ctrl+r` / `Ctrl+t` are the fzf pickers |
+| [PowerShell profile](docs/powershell.md) | `profile.d/` layout and conventions, alias tips + `aliasdoctor`, keybindings, project navigation, workflow helpers, reliability |
+| [Window manager](docs/window-manager.md) | Workspace map, pinned vs. seeded app routing, layout commands, raise-or-launch |
+| [Desktop shell](docs/desktop.md) | Yasb bars and widgets, Flow Launcher, Windhawk mods, Nilesoft Shell context menu |
+| [Terminal](docs/terminal.md) | Windows Terminal overlay, WezTerm workspaces + shell integration |
+| [Theming](docs/theming.md) | How one palette reaches every surface, shipped themes, wallpaper generation |
+| [Windows tuning](docs/windows-tuning.md) | `winsmooth` host tuning, built-in AI opt-out, diagnostics/debloat |
 
-Brackets and quotes auto-pair the way an editor does: an opening delimiter brings its partner,
-typing the closing one steps over it instead of doubling it, a selection gets wrapped, and
-Backspace between an empty pair removes both. Disable with `$env:WINDOTFILES_AUTOPAIR = 'off'`.
+## Highlights
 
-`keys` lists what's actually bound (`keys history` filters), the same way `cmds` lists the
-profile's commands and `aliastips` lists its shortcuts.
+- **Monitor-agnostic workspaces** — `Alt+1`–`Alt+0` focus the owning monitor first, so one keypress
+  crosses displays. Tile counts are ceilings tuned for a 5120x1440 panel; overflow workspaces use a
+  scrolling layout rather than degenerating into slivers. → [details](docs/window-manager.md#workspaces)
+- **Raise or launch** — the Hyprland habit ported to Windows. `Win+B` focuses the browser you already
+  have instead of opening a second one; press again to cycle its windows. Discovery goes through
+  `komorebic state`, so it reaches windows on inactive workspaces and inside stacks that
+  `SetForegroundWindow` cannot. → [details](docs/window-manager.md#raise-or-launch)
+- **Alias tips** — zsh's `you-should-use`, derived from the live session's AST rather than a
+  hand-maintained list. `aliasdoctor` points it the other way: it mines your history for the commands
+  you retype with *no* shortcut and emits paste-ready definitions.
+  → [details](docs/powershell.md#alias-tips)
+- **One palette, everything** — `theme dracula` repaints terminal, prompt, komorebi borders, both Yasb
+  bars, VSCode chrome, Spotify, Flow Launcher, the context menu, the Windows accent, and the
+  wallpaper. Most of it live. → [details](docs/theming.md)
 
-## Terminal
+## What's tracked
 
-- Windows Terminal styling lives in `terminal/windows-terminal/settings.json` (the `Ashes`
-  scheme matching komorebi, `CaskaydiaCove NF`, padding, `copyOnSelect`, bell off, hidden
-  scrollbar, and `ctrl+shift`/`ctrl+alt` pane keybindings). `winsmooth -Apply` deep-merges this
-  overlay into the live `settings.json`, preserving machine-specific profiles/GUIDs — so the
-  terminal look is version-controlled. Edit the overlay, not the live file.
-- WezTerm is available to try alongside Windows Terminal: `terminal/wezterm/wezterm.lua`
-  (same theme and font, via a built-in color scheme) is linked to `~/.config/wezterm/wezterm.lua`
-  by `winsmooth`/`install.ps1`. `Alt+Enter` launches the terminal (WezTerm if installed, else
-  Windows Terminal). Its config is Lua, so it does more than the static overlay:
-  - **Status bar** — the right side of the tab bar shows the active workspace, current project
-    (cwd basename), git branch, battery, and clock, coloured from the live scheme so it tracks
-    `theme`.
-  - **Project switcher** — `ctrl+shift+p` fuzzy-picks a directory under `C:\Workspace\Projects`
-    (plus any `projects.local.json` group roots) and opens/switches to a per-project **workspace**;
-    `ctrl+shift+s` fuzzy-switches between already-open workspaces.
-  - **Smart hyperlinks** — git hashes, `file:line`, and ticket IDs become clickable. The base URLs
-    are read from env vars so nothing project-specific is committed: `WEZTERM_GH_REPO` (`#123` →
-    GitHub issue), `WEZTERM_GIT_REPO` (hash → commit), `WEZTERM_ADO_BASE` (`AB#123` → ADO work
-    item). `ctrl+shift+space` quick-selects hashes and `file:line` locations without a link.
-  - **Shell integration** — `powershell/profile.d/47-wezterm.ps1` emits OSC 7 (cwd), OSC 133
-    (prompt/output zones) and OSC 1337 user vars when the shell is running inside WezTerm, and
-    no-ops everywhere else. That buys `shift+up`/`shift+down` to jump between prompts in the
-    scrollback, triple-click to select a whole command's output however far it wrapped, exact cwd
-    inheritance for new tabs/splits, and tab titles that name the command a tab is *running*
-    (`git`, `npm`) instead of `pwsh`. Disable with `WINDOTFILES_WEZTERM_INTEGRATION=off`.
-  - **OS auto light/dark** — when Windows switches to light mode, the theme-managed (dark) scheme
-    is overridden with a light counterpart; dark mode leaves the `theme`-set scheme authoritative.
-  - **Chrome that gets out of the way** — the scrollbar appears only when there is scrollback to
-    scroll and you aren't inside a full-screen TUI, inactive panes dim, and `ctrl+shift+k` opens
-    the command palette (its stock `ctrl+shift+p` binding belongs to the project switcher here).
-- Both terminals carry a **subtle acrylic frost** that echoes the frosted Yasb bars and komorebi
-  borders, kept conservative so text stays crisp: Windows Terminal uses `useAcrylic` at `opacity`
-  95; WezTerm uses `win32_system_backdrop = 'Acrylic'` at `window_background_opacity` 0.94.
+PowerShell profile + project registry, Starship config, package manifests and `install.ps1`, terminal
+configs, komorebi/whkd config, Yasb config, the Windhawk mod list, palette-driven app theming (VSCode,
+Spicetify, Flow Launcher, Nilesoft Shell), theme palettes, generated wallpapers, and the fastfetch
+banner.
 
-## Project navigation
-
-Project groups live in `powershell/projects.json` (a generic example). To keep private
-group names out of the repo, create `powershell/projects.local.json` with the same shape —
-it is gitignored and takes precedence over the committed example when present.
-
-- `project` / `proj` opens the fuzzy project picker.
-- `project Sandbox` opens the configured group picker.
-- `project win-dotfiles` jumps directly when a unique repo match exists.
-- Group shortcuts such as `play`, `sbx`, and `clients` are generated from the registry.
-- `addproj Sandbox` adds a new group to the registry, deriving the command and relative path by default.
-- `apg Clients` creates/registers a project group under `C:\Workspace\Projects`.
-- `ap -Group Clients -Mode empty -Name app` creates an empty project inside a group.
-- `ap -Group Clients -Mode clone -GitUrl <url>` clones a repo into a group.
-- `projcache` shows the persistent project directory cache; `projcache -Refresh` rebuilds it after adding or moving repos.
-
-## Reliability
-
-- `dotdoctor` runs the win-dotfiles health check.
-- `powershell/Test-WinDotfiles.ps1` runs the same checks from a clean PowerShell process.
-- Set `WINDOTFILES_PROFILE_DEBUG=1` before loading the profile to print per-script load times.
-- The prompt defaults to Starship when it is installed (language-aware: shows git branch/status
-  and Node/.NET/Python versions in context) and falls back to the fast native prompt otherwise.
-  Force either with `WINDOTFILES_PROMPT=starship` or `WINDOTFILES_PROMPT=native`. The Starship
-  prompt uses a **transient prompt** — once a command runs, its prompt collapses to a bare `❯`
-  so scrollback stays focused on output.
-- `profileperf` reports profile script timing, Starship prompt timing, and cached project lookup timing; add `-RefreshProjects` to include a full project scan.
-- Codex shells prefer `C:\tmp\codex` when it supports create/delete; otherwise they fall back to repo-local `.tmp\codex` for `TEMP`/`TMP`/`TMPDIR`, `DOTNET_CLI_HOME`, .NET artifacts, and NuGet transient caches, with MSBuild node reuse disabled so sandboxed .NET builds avoid user-profile temp/state permission issues where possible.
-- Add machine-specific settings to `powershell/profile.local.ps1`; it is ignored by git.
-
-## Workstation tuning
-
-- `wincheck` reports Windows friction across profile timing, project cache lookup, startup apps, Defender, search/indexing, services, launcher roles, comfort tools, PowerToys, Terminal profiles, WSL/Docker-adjacent processes, and komorebi/whkd.
-- `wincheck -Detailed` includes slower profile scripts, enabled PowerToys modules, and top memory users.
-- `winsmooth` previews reversible host tuning; `winsmooth -Apply` backs up touched settings under `C:\Workspace\Dev\Cache\win-dotfiles\workstation-backups` before applying them.
-- `winsmooth -RestoreLast` restores the most recent workstation tuning backup.
-- `winsmooth -Apply` trims PowerToys so komorebi owns tiling, disables PowerToys Run in favor of Flow Launcher on `Alt+Space` (themed + autostarted), makes Everything the primary file search path, limits duplicate Windows Search/folder result volume, starts/autostarts QuickLook/EarTrumpet/Ditto, applies bounded Ditto history, cleans Windows Terminal profiles, links repo-managed komorebi/whkd config, marks dev roots as not content indexed, and tries to add Defender path exclusions.
-- Run `winsmooth -Apply` from an elevated shell when you want Defender exclusions to be added; Defender stays enabled and only path exclusions are used.
-- `winsmooth -Apply` also tunes OS responsiveness: kills shell animations (menu/window/taskbar), sets a raw 1:1 pointer and the fastest key repeat, and activates a high-performance power plan (Ultimate Performance, no USB suspend or core parking). Skip it with `winsmooth -Apply -SkipResponsiveness`; window animations fully clear after an `explorer.exe` restart or sign-out, and the `wincheck` `Responsiveness` row reports the current state.
-- `winsmooth -Apply` declutters Windows shell defaults: shows file extensions and hidden files, cleans the taskbar (hides Widgets, Chat, Task View, and the search box), disables Start menu web results, opens Explorer to This PC, and enables long-path support. It restarts `explorer.exe` to apply them; skip with `winsmooth -Apply -SkipShellDefaults`. The `wincheck` `Desktop` row reports shell-default and Yasb bar state. (Light/dark mode is set separately, by the active theme — see [Theming](#theming).)
-- `winsmooth -Apply` links the repo `yasb/` status bar config (`config.yaml` + `styles.css`) to `~/.config/yasb`, enables Yasb autostart, and starts the bar; komorebi autostarts with `--whkd` only (Yasb is the bar now, so no `--bar`). The Yasb island shows per-monitor komorebi workspaces, the active layout, the focused window, now-playing media, CPU/memory, and a centered clock, themed to match the active theme (see [Theming](#theming)) with `CaskaydiaCove NF` glyphs. After applying, run `wmstop; wmstart` once (or reboot) so komorebi + Yasb relaunch together. It also auto-hides the Windows taskbar (Yasb is primary; the tray reveals on hover). Skip the bar step with `-SkipYasb`. The previous komorebi built-in bar (`komorebi/komorebi.bar.json`) stays in the repo as an unlinked fallback.
-- `winsmooth -Apply` also extends the active theme to two app surfaces: it deep-merges the VSCode overlay (`vscode/settings.json`) into the live editor settings (palette-driven workbench chrome; `-SkipVSCode`) and themes Spotify via Spicetify from the active palette (`-SkipSpicetify`, no-op when Spicetify is absent). See [Theming](#theming).
-- `winsmooth -Apply -DeepWork` also disables Teams and Slack startup entries; the default balanced profile leaves work comms alone.
-- `winsmooth -Apply` applies the active desktop theme (window accent color, Windows light/dark mode from the theme's `IsLight` flag, and generated wallpaper) and links the fastfetch banner config. Skip with `winsmooth -Apply -SkipDesktopTheme`. The accent on title bars fully applies after sign-out.
-
-## Theming
-
-The whole system is themed from a single palette so the terminal, prompt, window manager, editor, music player, and Windows desktop stay in lock-step. Themes are defined once in `themes/<name>.psd1`; the active choice is recorded in `themes/active.txt`.
-
-- `theme` shows the active theme and the available ones; `theme list` lists them.
-- `theme dracula` switches everything live: Windows Terminal colors, WezTerm color scheme, the Starship palette, komorebi borders, the Yasb status bar, VSCode's workbench chrome, Spotify (via Spicetify), Flow Launcher, the Nilesoft Shell context menu, Claude Code's UI theme (light/dark to match; new sessions only), and the Windows accent color + wallpaper. komorebi reloads in place and Yasb hot-reloads (its `styles.css` `:root` block is rewritten from the theme's `YasbPalette`); Windows Terminal/WezTerm/Starship pick up on save / next prompt.
-- `theme nord -NoApply` rewrites the config files without touching the running system (useful in setup/CI).
-- Shipped themes: **ashes** (default, the muted Base16 look), **dracula**, **nord**, **mocha** (Catppuccin Mocha), **gruvbox** (warm retro amber/orange), **gruvbox-material** (Gruvbox Material Dark Soft — a lower-contrast, single cream-accent variant of **gruvbox**), **everforest** (Everforest Dark Soft — the green sibling of **gruvbox-material**: same low-contrast feel on a blue-green base with a sage accent), **everforest-light** (Everforest Light Soft — the same forest palette on a warm parchment base; a light theme like **latte**), **rosepine** (Rosé Pine — warm plum/rose/gold), and **latte** (Catppuccin Latte — light; light themes set the optional `IsLight` key so switching to them also flips Windows into light mode, not just the app palette).
-- **VSCode**: the `vscode/settings.json` overlay carries a marked `workbench.colorCustomizations` block that `theme` rewrites from the palette's `YasbPalette` (no theme extension required — only the editor *chrome* is recolored; syntax highlighting stays on whatever color theme you pick). `winsmooth -Apply` deep-merges the overlay into the live `%APPDATA%\Code\User\settings.json`, preserving your other settings; VSCode watches the file, so the chrome repaints instantly. Skip with `-SkipVSCode`.
-- **Spotify**: `spicetify/win-dotfiles/` is a Spicetify theme with a `color.ini` section per palette plus a minimal `user.css`. `theme` (and `winsmooth -Apply`) point Spotify at the matching scheme via `tools/Apply-Spicetify.ps1` and run `spicetify apply`. Install Spicetify with `scoop install spicetify-cli` (in `packages/scoop.json`); the first time, run `spicetify backup apply` once (or `tools/Apply-Spicetify.ps1 -FirstRun`). It's a safe no-op when Spicetify/Spotify aren't installed. Skip with `-SkipSpicetify`.
-- Desktop accent + wallpaper changes are captured in the `winsmooth` backup manifest, so `winsmooth -RestoreLast` reverts them.
-- Wallpapers are committed under `wallpapers/`. Regenerate them after a palette change with `tools/Build-Wallpapers.ps1` (renders a gradient-from-palette image per theme; pass `-Width/-Height` to match a monitor).
-- A `fastfetch` system banner with a custom `>_` logo and a rotating tip prints on interactive login (`powershell/profile.d/170-greeting.ps1`). Its key colors use ANSI names so the banner tracks the active theme. Suppress it with `$env:WINDOTFILES_GREETING = 'off'`.
-
-## Disable built-in AI
-
-- `windows\disable-ai.ps1` turns off Windows 11's built-in AI: removes the Copilot app and taskbar button, and disables Windows Recall, Click to Do, Windows Copilot, Edge Copilot (sidebar, page context, Compose), and AI in Search/Notepad. It self-elevates (machine policies live under HKLM); add `-RemoveRecallFeature` to also strip Recall as a Windows optional feature.
-- `windows\enable-ai.ps1` reverses it: clears the policies and restores the per-user toggles to their AI-on defaults. It does not reinstall the Copilot app (use the Microsoft Store) and does not re-add the Recall feature if it was removed.
-- Sign out or restart for the policy changes to take full effect. App-level generative features (Paint Cocreator, Photos generative fill) have no clean policy and are not covered.
-
-## Diagnostics and debloat
-
-- `windows\debloat.ps1` reduces diagnostics to a practical floor: sets `AllowTelemetry=1` (the lowest a Home/Pro SKU honors), disables the DiagTrack and dmwappushservice telemetry services, turns off Windows Error Reporting and the CEIP/feedback scheduled tasks, disables suggested content, and removes a few unwanted Store apps (GetHelp, Xbox overlays, Media Player). It self-elevates.
-- `windows\rebloat.ps1` reverses everything except app removal: clears the policies, restores service start types, re-enables the scheduled tasks, and turns suggested content back on. Removed apps must be reinstalled from the Microsoft Store.
-- Most privacy toggles (advertising ID, tailored experiences, Start/Settings suggestions) are already handled by `winsmooth`.
-- `winharden` re-applies both hardening scripts in one pass (`disable-ai.ps1` + `debloat.ps1`); `winharden -Restore` runs the matching restores (`enable-ai.ps1` + `rebloat.ps1`). It opens a single elevated window when not already running as admin. Re-run it after a major Windows feature update, which can quietly re-enable some of these.
-
-## Launcher and desktop comfort
-
-- [Flow Launcher](https://www.flowlauncher.com) is the launcher, on `Alt+Space` (replacing PowerToys Run, which `winsmooth` disables). Install it with winget (`Flow-Launcher.Flow.Launcher`, in `packages/winget.json`) or scoop (`Flow-Launcher`); `winsmooth -Apply` installs the theme, binds `Alt+Space`, sets the Nerd Font, and enables autostart. It's palette-themed in lock-step with the rest of the rice: `flowlauncher/win-dotfiles.xaml` carries a marked brush block the `theme` command rewrites from each theme's `YasbPalette` (see [Theming](#theming)), and Flow hot-reloads its active theme file. Browse/install plugins from Flow's own store (`Ctrl+I` → Plugin Store). (`Win+Space` is not usable: Flow registers hotkeys via Win32 `RegisterHotKey`, and Windows permanently reserves `Win+Space` for the input-switcher. `Apply-FlowLauncher.ps1` also handles the scoop *portable* data root, not just `%APPDATA%\FlowLauncher`.)
-- QuickLook owns file previews (`Space` on a selected file). Ditto starts with a conservative clipboard history profile: `Ctrl+Alt+V` activation, 300 entries, 14 days, multi-paste capture off, 5 MB max clip payload, and delete prompts on.
-
-## Window manager
-
-- Komorebi config lives in `komorebi/komorebi.json`; whkd keybindings live in `komorebi/whkdrc`.
-- Popup handling keeps common dialogs, PowerToys overlays, browser PiP, and Teams call/notification overlays out of the tiling graph.
-- Depth: focused windows wear a rounded accent border (`border_style: Rounded`, width 3, themed by `theme`) with a smooth easing animation on movement. Transparency is configured but left off — it breaks tiling for layered apps (Firefox, Windows Terminal).
-
-### Workspaces
-
-Ten named workspaces, six on the ultrawide and four on the secondary. `Alt+<digit>` is
-**monitor-agnostic**: komorebi focuses the owning monitor first, so one keypress crosses displays and
-there is no separate "switch monitor" step in normal use.
-
-| Key | Workspace | Monitor | Layout | Visible tiles |
-| --- | --- | --- | --- | --- |
-| `Alt+1` | DEV | ultrawide | ultrawide main-stack | 5 |
-| `Alt+2` | CODE | ultrawide | ultrawide main-stack | 5 |
-| `Alt+3` | AGENT | ultrawide | columns | 4 |
-| `Alt+4` | DEBUG | ultrawide | ultrawide main-stack | 5 |
-| `Alt+5` | BROWSER | ultrawide | columns | 4 |
-| `Alt+6` | MISC | ultrawide | scrolling | 4 at a time |
-| `Alt+7` | COMMS | secondary | grid | 4 |
-| `Alt+8` | MEDIA | secondary | horizontal stack | 2 |
-| `Alt+9` | MAIL | secondary | vertical stack | 2 |
-| `Alt+0` | EXTRA | secondary | scrolling | 2 at a time |
-
-- `Alt+Shift+<digit>` moves the focused window there and follows it; `Ctrl+Alt+<digit>` shoves it
-  there and stays put — that second one is the "this workspace is getting crowded" gesture.
-- `Alt+` `` ` `` jumps to the last workspace, `Alt+Shift+` `` ` `` moves a window to it.
-- Tile counts are ceilings derived from minimum usable width on a 5120x1440 panel. Past the ceiling
-  komorebi appends into a stack rather than slicing thinner; `Alt+;` unstacks one, `Alt+Shift+;`
-  unstacks all, and `Alt+[` / `Alt+]` cycle within a stack.
-- MISC and EXTRA use the **scrolling** layout instead of a ceiling: a fixed number of columns stays
-  visible and the rest scroll off-screen, so an overflow workspace never degenerates into slivers or
-  a wall of tabs. `Alt+Shift+N` switches any workspace to it.
-- Monocle is deliberately unbound — one window on a 32:9 panel wastes it. `wmfocus` promotes the
-  focused window to the primary tile instead.
-- Positional fallbacks: `Alt+,` / `Alt+.` focus a monitor directly, `Alt+←` / `Alt+→` cycle monitors,
-  `Alt+↑` / `Alt+↓` cycle workspaces.
-
-### App routing
-
-Apps land on the right workspace on their own. There are two rule types and the difference matters:
-
-- **Pinned** (`workspace_rules`) — komorebi sends the window back every time it sees it. You cannot
-  keep it elsewhere. For single-home apps you never deliberately relocate.
-- **Seeded** (`initial_workspace_rules`) — fires once, the first time the window appears. After that
-  the window is yours: move it anywhere and it stays. For anything whose content you might sometimes
-  want on the big screen.
-
-| Workspace | Pinned | Seeded |
-| --- | --- | --- |
-| DEV | — | WezTerm, Windows Terminal, VS Code, Visual Studio |
-| AGENT | — | Codex |
-| DEBUG | — | MySQL Workbench, DBeaver, MongoDB Compass, SSMS, Postman |
-| BROWSER | — | Firefox, Chrome, Edge, Vivaldi |
-| MISC | Elgato Wave Link | Notion, Notepad++, WinMerge, WinSCP |
-| COMMS | Slack, Discord | Teams, Zoom |
-| MEDIA | Spotify, YouTube Music | — |
-| MAIL | — | Outlook (classic and new) |
-
-Teams and Zoom are seeded rather than pinned on purpose: meetings and screen-share often want the
-ultrawide, and a pinned rule would drag them back mid-call. Meeting/call popups are separately kept
-out of the tiling graph by `ignore_rules`.
-
-Matching is on executable name and is **case-sensitive** (`matching_strategy: Equals`) — there is no
-case-insensitive option, so a rule with the wrong casing silently never fires. Outlook uses a
-`Regex` rule with `(?i)` because Office is inconsistent about it, and is routed under both
-`outlook.exe` (classic) and `olk.exe` (new Outlook).
-
-Monitors are pinned in `display_index_preferences` by **`device_id`**, not serial number. The ASUS
-reports its `serial_number_id` intermittently — when it comes back `null`, a serial-keyed mapping
-stops resolving and that monitor silently falls back to unnamed default workspaces, which breaks the
-`Alt+7`–`Alt+0` binds. `device_id` is tied to the physical port and does not have this problem.
-Check with `komorebic monitor-information` if a monitor's workspaces ever come up unnamed.
-
-### Shell and layout commands
-
-- `wmcheck` runs komorebi's config check; `wmreset` reloads `komorebi.json` and retiles.
-- `wmdev`, `wmbrowse`, and `wmfocus` apply common intents; `wmws <NAME>` jumps to a workspace by name.
-- `wmstart` starts `komorebi` with `whkd` using a clean state, and starts the Yasb bar alongside it.
-- `wmstop` stops `komorebi` and `whkd` (restoring hidden windows) and stops the Yasb bar.
-- Layout hotkeys: `Alt+Shift+U` ultrawide main-stack, `Alt+Shift+C` columns, `Alt+Shift+G` grid,
-  `Alt+Shift+V` vertical stack, `Alt+Shift+N` scrolling, `Alt+Shift+B` BSP. Stackbars show only on
-  stacks, with compact title labels.
-- `Alt+Shift+O` reloads `komorebi.json` — this is also the **undo for layout experiments**: it resets
-  every workspace to its configured layout, so trying `Alt+Shift+C`/`N`/`V` on a workspace is always
-  one keypress from reversible. `wmreset` does the same from the shell. Note komorebi's
-  `reload-configuration` only handles legacy `.ahk`/`.ps1` configs — a static `komorebi.json` needs
-  `replace-configuration`.
-- The `Alt+Shift+<layout>` keys act on the **focused** workspace only. If a layout key seems to do
-  nothing, focus is elsewhere — komorebi changed that workspace instead, silently. To retarget a
-  specific workspace regardless of focus, use `komorebic named-workspace-layout <NAME> <layout>`.
-
-### Raise or launch
-
-The Hyprland habit of "focus it if it's already open, otherwise start it", ported to Windows.
-`Win+B` goes to the browser you already have rather than opening a second one; press it again to
-cycle that app's other windows. `raise browser` does the same thing from the shell.
-
-| Key | App |
-| --- | --- |
-| `Win+B` | browser (Chrome) |
-| `Win+C` | VS Code |
-| `Win+T` | terminal (WezTerm, else Windows Terminal) |
-| `Win+M` | Teams |
-| `Win+Y` | YouTube Music |
-| `Win+E` | File Explorer |
-
-- The apps and their launch commands live in `powershell/apps.json`; add machine-specific ones to
-  the gitignored `powershell/apps.local.json`, which is merged over the committed set so it only
-  has to carry what it changes. `apps` lists what's registered. Entries match on executable name
-  and can add a `title` regex when one exe serves several apps; packaged apps that reinstall into
-  versioned directories (Slack, YouTube Music) launch via a stable `shell:AppsFolder\…` ID.
-- `raise <name>` accepts a name, an alias, or an unambiguous prefix (`raise brow`), and falls back
-  to treating an unknown `something.exe` as an ad-hoc match. `-NoLaunch` raises without ever
-  starting the app, `-NoCycle` pins to the first match, and `-Exe`/`-Title` match windows directly
-  without a registry entry.
-- Window discovery goes through `komorebic state`, so a match on an inactive workspace is reached
-  by focusing that workspace first, and a window buried in a stack is surfaced with
-  `focus-stack-window` rather than by handle — both cases a plain `SetForegroundWindow` cannot
-  reach, because komorebi hides those windows. Without komorebi running it degrades to
-  `Get-Process` main windows, which only sees one window per process.
-- `Win+<letter>` rather than `Alt+<letter>` because whkd grabs a combo globally: an `Alt+F`
-  binding would shadow the File menu in every app. These do override the Windows defaults for the
-  same keys (`Win+E` still opens Explorer, just via raise-or-launch).
-- The hotkeys and the shell command run the same `tools/Raise-App.ps1`, so they can't disagree
-  about what `browser` means. whkd pipes bindings into one long-lived PowerShell session rather
-  than spawning a process per keypress, so the script's interop type is compiled once per whkd
-  session and a warm press costs about 70 ms. That is also why it stays Windows PowerShell 5.1
-  compatible and never touches the profile.
-- Editing `komorebi/whkdrc` needs a whkd reload (`Alt+O`) before new bindings take effect.
-
-## Status bar (Yasb)
-
-[Yasb](https://github.com/amnweb/yasb) is the primary status bar, replacing komorebi's built-in bar.
-
-- Config lives in `yasb/config.yaml` (layout/widgets) and `yasb/styles.css` (look). `winsmooth -Apply`
-  links both to `~/.config/yasb/` and enables Yasb autostart; `wmstart`/`wmstop` start/stop it with the
-  window manager. Install it with winget (`AmN.yasb`, in `packages/winget.json`).
-- Two asymmetric **frosted-glass** bars (real acrylic blur + slide animation), with running app icons
-  on the komorebi workspace buttons. komorebi reserves the bar strip via `global_work_area_offset`
-  (in `komorebi/komorebi.json`) so tiled windows never sit under the bar — the bars themselves don't
-  register as Windows AppBars (one reservation, not two):
-  - **Light bar** on the primary screen (`screens: ['primary']`, the Samsung ultrawide) — an ambient
-    glance: workspaces, active layout, a centered clock, media (scrolling title + album-art popup), a
-    Cava audio visualizer, volume, an on-brand active-theme indicator, and the date.
-  - **Rich bar** on the other monitor (`screens: ['*']`, the smaller ASUS detail screen) — workspaces,
-    layout, komorebi control, focused window; centered clock; then weather (°F), a collapsible system
-    island (CPU / memory / GPU / disk / network traffic, color-coded by load), update counts,
-    notifications, a do-not-disturb toggle, a power menu, and the date.
-- Widgets are interactive: click **CPU / memory / GPU** for a usage-history graph popup, **disk** for a
-  volumes list, **media** for transport controls, **volume** scrolls to change / clicks to mute. The
-  **active-theme indicator** is a Custom widget that reads `themes/active.txt` (hard-codes the repo path)
-  and updates within ~5 s of a `theme` switch.
-- Colors are theme-driven: `styles.css` references CSS variables in a marked `:root` block that the
-  `theme` command rewrites from each theme's `YasbPalette` (`themes/<name>.psd1`); Yasb hot-reloads, so
-  switching themes repaints both bars live (CPU/mem/GPU/disk also use the `ok/warn/err` roles for load
-  thresholds). Edit layout/shape in `config.yaml`/`styles.css`, edit colors in the themes.
-- One-time setup: click the **weather** widget and search your location once (keyless Open-Meteo stores
-  it locally — it can't be pre-seeded from config). If the **GPU** widget reads 0%, install/run Libre
-  Hardware Monitor. The **Cava** visualizer needs the `cava` binary (`karlstav.cava`, in
-  `packages/winget.json`); after installing it, fully **stop and start** Yasb (not reload) so it picks
-  up `cava` on PATH.
-- Komorebi workspace widgets need komorebi ≥ v0.18.0. Control the bar directly with
-  `yasbc start|stop|reload`. The komorebi built-in bar (`komorebi/komorebi.bar.json`) is kept as an
-  unlinked fallback — relink it and re-add `--bar` to komorebi autostart to switch back.
-- **Workaround — workspace clicks die after the displays sleep.** Windows reissues HMONITOR handles
-  on wake, but Yasb caches its bar's handle once at startup and never recomputes it, so the komorebi
-  workspace widget can no longer resolve its screen and every click throws
-  `TypeError: 'NoneType' object is not subscriptable` into `~/.config/yasb/yasb.log`. komorebi is
-  fine here — only Yasb needs restarting. `tools/Reload-YasbOnWake.ps1 -Register` installs a
-  scheduled task that runs `yasbc reload` on the wake edge (Kernel-Power 566 filtered to
-  `NextSessionType=0`, plus 107 for a full resume); `-Status` shows recent reloads, `-Unregister`
-  removes it. Confirmed against Yasb v2.0.5 and reported upstream as
-  [amnweb/yasb#1053](https://github.com/amnweb/yasb/issues/1053) — drop the task once that ships.
-
-## Windhawk
-
-[Windhawk](https://windhawk.net) applies runtime mods for window/title-bar styling and Explorer/context
-menus. Install it with winget (`RamenSoftware.Windhawk`, in `packages/winget.json`).
-
-- Windhawk mod settings live in the registry with no official export, so the repo tracks a documented
-  mod list in `windhawk/mods.md` (curated mods + recommended settings) plus a scripted capture/restore:
-  `windhawk/Export-Windhawk.ps1` snapshots your enabled mods, per-mod settings, and sources into
-  `windhawk/state/`; `windhawk/Import-Windhawk.ps1` restores them (and `winsmooth -Apply` runs the
-  import when `windhawk/state/` exists, skippable with `-SkipWindhawk`). Both self-elevate; import backs
-  up the prior state under `%LOCALAPPDATA%\win-dotfiles\windhawk-backups` first. It's best-effort —
-  re-run the export after changing your mod set. `wincheck` reports whether Windhawk is installed.
-- Most mods apply to newly drawn windows, so restart Explorer (or reboot) after enabling them.
-- The mods either ride the Windows accent that `theme` already sets on title bars (so they follow theme
-  switches for free) or take explicit colors — see `windhawk/mods.md` for which and the per-theme hex.
-
-## Context menu (Nilesoft Shell)
-
-[Nilesoft Shell](https://nilesoft.org) re-skins the Windows right-click context menu. Install it with winget
-(`Nilesoft.Shell`, in `packages/winget.json`), then run `shell -register -restart` once from an elevated prompt.
-
-- It's palette-themed in lock-step with the rest of the rice: `nilesoft-shell/theme.nss` carries a marked
-  `theme{}` block the `theme` command rewrites from each theme's `YasbPalette` (same pattern as Flow Launcher's
-  XAML brushes). `winsmooth -Apply` (and every `theme <name>` switch) runs `tools/Apply-NileSoftShell.ps1`,
-  which stages the rewritten file into the installed Shell's `imports\theme.nss`. It's a safe no-op when
-  Nilesoft Shell isn't installed. Skip with `-SkipNileSoftShell`.
-- Unlike Yasb, Nilesoft Shell doesn't hot-reload `shell.nss` on save: reload it by holding right-click then
-  left-click on the desktop, or restart Explorer (`tools/Apply-NileSoftShell.ps1 -Restart` does the latter for
-  you — used sparingly, since it's disruptive if run on every theme switch).
-
-## Workflow helpers
-
-- `cmds` / `mycmds` shows a grouped catalog of custom commands; use `cmds git` or `cmds -Search deploy` to filter it.
-- `nr` fuzzy-picks or runs npm scripts from the nearest `package.json`.
-- `verify` runs the best available project check: npm `verify`/`test`/`build`, then .NET test/build.
-- `gmain`, `gnew`, `gsync`, `gpub`, and `gprune` cover common Git branch chores.
-- `gitlocks` shows Git `index.lock` files; `gunlock` clears a stale current-repo lock, and `gunlock -All` scans known project roots. In Codex, `gunlock` will call out when the sandbox requires an escalated rerun for `.git` metadata writes.
-- `td` calculates one or more time ranges, with clock and decimal-hour output.
-- `awslambda`, `awslogs`, `fbdeploy`, `fbemu`, `stripelisten`, and `stripetrigger` wrap common cloud CLI commands with visible context.
-- `histdoctor` summarizes unavailable commands from PowerShell history without printing raw history lines.
-- `workon` jumps to a project, records the last selection, and runs `git status`.
-- Native tab completion is wired for `gh`, `winget`, `dotnet`, and `rustup` (plus `scoop`/`git` when `scoop-completion`/`posh-git` are installed). `gh` and `rustup` completion scripts are cached under the cache root; run `Update-WinDotfilesCompletions` after upgrading those tools. (`npm` has no native PowerShell completion — use `nr`.)
-- `gitdefaults` sets friction-reducing global Git defaults only when unset: `rebase.autostash`, `push.autoSetupRemote`, `fetch.prune`, `help.autocorrect=prompt`.
-- `mkcd <dir>` creates a directory and enters it; `touch <file>` creates or bumps a file.
-- `proj-audit` reports, per registered project, whether it has a README, `.gitignore`, `.editorconfig`, `.nvmrc` (Node), and a `verify`/`test`/`build` script (Node). `scaffold <editorconfig|gitignore|readme>` copies the matching template from `templates/` into the current (or `-Path`) project on demand.
+Not tracked: installed PowerShell Gallery modules, caches, generated reports, and local secrets.
+Machine-specific and private config lives in gitignored siblings — `powershell/profile.local.ps1`,
+`projects.local.json`, `apps.local.json` — which are merged over the committed defaults.
 
 ## License
 
