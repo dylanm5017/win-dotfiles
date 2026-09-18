@@ -181,6 +181,176 @@ function Test-WinDotfilesConfig {
     $results
 }
 
+function ConvertFrom-WinDotfilesJsonc {
+    # ConvertFrom-Json rejects comments, so round-trip through JsonNode (which can skip them)
+    # to get a comment-free object out of a JSONC file.
+    param([Parameter(Mandatory)][AllowEmptyString()][string]$Text)
+
+    $options = [System.Text.Json.JsonDocumentOptions]::new()
+    $options.CommentHandling = [System.Text.Json.JsonCommentHandling]::Skip
+    $options.AllowTrailingCommas = $true
+    [System.Text.Json.Nodes.JsonNode]::Parse($Text, $null, $options).ToJsonString() | ConvertFrom-Json
+}
+
+function Test-WinDotfilesTheme {
+    # Cross-file reference gate for the theme system. Every other check here is per-file syntax,
+    # which cannot see that a theme names a Spicetify section or starship palette that does not
+    # exist -- the switcher writes the name through and the target silently keeps its old colours.
+    # This resolves each theme's declared targets, then verifies the active theme actually landed
+    # in every file the switcher rewrites (a half-applied `theme set` leaves surfaces mismatched).
+    [CmdletBinding()]
+    param([string]$RepoRoot = $WinDotfilesRoot)
+
+    $results = [System.Collections.Generic.List[object]]::new()
+
+    if (-not $RepoRoot -or -not (Test-Path -LiteralPath $RepoRoot -PathType Container)) {
+        [void]$results.Add((New-WinDotfilesCheckResult 'Theme repo root exists' $false ([string]$RepoRoot)))
+        return $results
+    }
+
+    $themeDir = Join-Path $RepoRoot 'themes'
+    $themeFiles = @(Get-ChildItem -LiteralPath $themeDir -Filter '*.psd1' -ErrorAction SilentlyContinue | Sort-Object Name)
+    if (-not $themeFiles) {
+        [void]$results.Add((New-WinDotfilesCheckResult 'Theme definitions found' $false "no .psd1 under $themeDir"))
+        return $results
+    }
+
+    # Read every target once; a missing target file is reported per-theme rather than fatally.
+    $starshipText = Get-Content -LiteralPath (Join-Path $RepoRoot 'starship.toml') -Raw -ErrorAction SilentlyContinue
+    $spicetifyText = Get-Content -LiteralPath (Join-Path $RepoRoot 'spicetify\win-dotfiles\color.ini') -Raw -ErrorAction SilentlyContinue
+    $weztermPath = Join-Path $RepoRoot 'terminal\wezterm\wezterm.lua'
+    $weztermText = Get-Content -LiteralPath $weztermPath -Raw -ErrorAction SilentlyContinue
+    $weztermCmd = Get-Command wezterm -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+    $yasbText = Get-Content -LiteralPath (Join-Path $RepoRoot 'yasb\styles.css') -Raw -ErrorAction SilentlyContinue
+
+    $terminalSchemes = @()
+    $terminalDefault = $null
+    try {
+        $wt = ConvertFrom-WinDotfilesJsonc -Text (Get-Content -LiteralPath (Join-Path $RepoRoot 'terminal\windows-terminal\settings.json') -Raw)
+        $terminalSchemes = @($wt.schemes.name)
+        $terminalDefault = $wt.profiles.defaults.colorScheme
+    }
+    catch {
+        [void]$results.Add((New-WinDotfilesCheckResult 'Theme targets: windows-terminal readable' $false $_.Exception.Message))
+    }
+
+    # The roles yasb/styles.css declares in :root are the contract every YasbPalette must satisfy.
+    $yasbRoles = @()
+    if ($yasbText -and $yasbText -match '(?s)win-dotfiles:theme:start(.*?)win-dotfiles:theme:end') {
+        $yasbRoles = @([regex]::Matches($Matches[1], '--([a-z-]+)\s*:') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
+    }
+
+    $requiredKeys = 'Name', 'ColorScheme', 'WeztermScheme', 'StarshipPalette', 'KomorebiTheme', 'BarTheme', 'YasbPalette', 'Accent', 'Wallpaper'
+    $themes = @{}
+
+    foreach ($file in $themeFiles) {
+        $slug = $file.BaseName
+        $problems = [System.Collections.Generic.List[string]]::new()
+
+        $theme = $null
+        try { $theme = Import-PowerShellDataFile -LiteralPath $file.FullName }
+        catch { [void]$results.Add((New-WinDotfilesCheckResult "Theme resolves: $slug" $false "unreadable: $($_.Exception.Message)")); continue }
+        $themes[$slug] = $theme
+
+        foreach ($key in $requiredKeys) {
+            if (-not $theme.ContainsKey($key)) { [void]$problems.Add("missing key $key") }
+        }
+
+        if ($theme.StarshipPalette) {
+            if ($null -eq $starshipText) { [void]$problems.Add('starship.toml not found') }
+            elseif ($starshipText -notmatch "(?m)^\[palettes\.$([regex]::Escape($theme.StarshipPalette))\]") {
+                [void]$problems.Add("starship palette [$($theme.StarshipPalette)] not defined")
+            }
+        }
+
+        if ($theme.ColorScheme -and $terminalSchemes -and $terminalSchemes -notcontains $theme.ColorScheme) {
+            [void]$problems.Add("windows-terminal scheme '$($theme.ColorScheme)' not defined")
+        }
+
+        # A WezTerm scheme is either a built-in or defined inline in wezterm.lua, and the repo
+        # cannot enumerate the built-ins -- so ask wezterm itself when it is available. It exits 0
+        # on an unknown scheme and only says so on stderr, hence the message match.
+        if ($theme.WeztermScheme -and $weztermCmd) {
+            $probe = & $weztermCmd.Source --config-file $weztermPath --config "color_scheme='$($theme.WeztermScheme)'" ls-fonts 2>&1
+            if ((@($probe) -join ' ') -match 'that scheme was not found') {
+                [void]$problems.Add("wezterm scheme '$($theme.WeztermScheme)' not found")
+            }
+        }
+
+        if ($null -eq $spicetifyText) { [void]$problems.Add('spicetify color.ini not found') }
+        elseif ($spicetifyText -notmatch "(?m)^\[$([regex]::Escape($slug))\]") {
+            [void]$problems.Add("spicetify section [$slug] missing")
+        }
+
+        if (-not (Test-Path -LiteralPath (Join-Path $RepoRoot "wallpapers\$slug.png") -PathType Leaf)) {
+            [void]$problems.Add("wallpapers\$slug.png missing")
+        }
+
+        if ($yasbRoles -and $theme.YasbPalette) {
+            $missing = @($yasbRoles | Where-Object { -not $theme.YasbPalette.ContainsKey($_) })
+            if ($missing) { [void]$problems.Add("YasbPalette missing role(s): $($missing -join ', ')") }
+        }
+
+        [void]$results.Add((New-WinDotfilesCheckResult "Theme resolves: $slug" ($problems.Count -eq 0) $(if ($problems) { $problems -join '; ' } else { 'all targets resolve' })))
+    }
+
+    # Active theme applied everywhere -----------------------------------------------------------
+    $activePath = Join-Path $RepoRoot 'themes\active.txt'
+    $active = if (Test-Path -LiteralPath $activePath -PathType Leaf) {
+        (Get-Content -LiteralPath $activePath -TotalCount 1 -ErrorAction SilentlyContinue | ForEach-Object { $_.Trim().ToLowerInvariant() })
+    }
+
+    if (-not $active) {
+        [void]$results.Add((New-WinDotfilesCheckResult 'Theme applied: active.txt' $false 'active.txt missing or empty'))
+        return $results
+    }
+    if (-not $themes.ContainsKey($active)) {
+        [void]$results.Add((New-WinDotfilesCheckResult 'Theme applied: active.txt' $false "active theme '$active' has no themes\$active.psd1"))
+        return $results
+    }
+
+    $theme = $themes[$active]
+    $drift = [System.Collections.Generic.List[string]]::new()
+
+    if ($starshipText -and $starshipText -match '(?m)^palette\s*=\s*"([^"]+)"' -and $Matches[1] -ne $theme.StarshipPalette) {
+        [void]$drift.Add("starship palette is '$($Matches[1])', expected '$($theme.StarshipPalette)'")
+    }
+    if ($weztermText -and $weztermText -match "(?m)^\s*config\.color_scheme\s*=\s*'([^']+)'" -and $Matches[1] -ne $theme.WeztermScheme) {
+        [void]$drift.Add("wezterm scheme is '$($Matches[1])', expected '$($theme.WeztermScheme)'")
+    }
+    if ($terminalDefault -and $terminalDefault -ne $theme.ColorScheme) {
+        [void]$drift.Add("windows-terminal colorScheme is '$terminalDefault', expected '$($theme.ColorScheme)'")
+    }
+    if ($yasbText -and $theme.YasbPalette -and
+        $yasbText -match '(?s)win-dotfiles:theme:start(.*?)win-dotfiles:theme:end' -and
+        $Matches[1] -match '--bg\s*:\s*([^;]+);') {
+        $bg = $Matches[1].Trim()
+        if ($bg -ne $theme.YasbPalette['bg']) { [void]$drift.Add("yasb --bg is '$bg', expected '$($theme.YasbPalette['bg'])'") }
+    }
+
+    # komorebi and its bar carry the palette as structured JSON rather than a marker block.
+    foreach ($pair in @(
+            @{ Rel = 'komorebi\komorebi.json'; Expected = $theme.KomorebiTheme },
+            @{ Rel = 'komorebi\komorebi.bar.json'; Expected = $theme.BarTheme })) {
+        $path = Join-Path $RepoRoot $pair.Rel
+        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { continue }
+        try {
+            $live = (Get-Content -LiteralPath $path -Raw | ConvertFrom-Json).theme
+            if ($live.palette -ne $pair.Expected.palette) {
+                [void]$drift.Add("$($pair.Rel) palette is '$($live.palette)', expected '$($pair.Expected.palette)'")
+            }
+            elseif ($pair.Expected.name -and $live.name -ne $pair.Expected.name) {
+                [void]$drift.Add("$($pair.Rel) name is '$($live.name)', expected '$($pair.Expected.name)'")
+            }
+        }
+        catch { [void]$drift.Add("$($pair.Rel) unreadable: $($_.Exception.Message)") }
+    }
+
+    [void]$results.Add((New-WinDotfilesCheckResult "Theme applied: $active" ($drift.Count -eq 0) $(if ($drift) { $drift -join '; ' } else { 'every target matches the active theme' })))
+
+    $results
+}
+
 function New-WinDotfilesCheckResult {
     param(
         [Parameter(Mandatory)][string]$Name,

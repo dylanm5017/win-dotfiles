@@ -11,6 +11,7 @@ if ($ConfigOnly) {
     $repoRoot = Split-Path -Parent $PSScriptRoot
 
     $results = @(Test-WinDotfilesConfig -RepoRoot $repoRoot)
+    $results += @(Test-WinDotfilesTheme -RepoRoot $repoRoot)
 
     $parsePaths = @(
         (Join-Path $repoRoot 'powershell')
