@@ -21,7 +21,7 @@ there is no separate "switch monitor" step in normal use.
 | `Alt+7` | COMMS | secondary | grid | 4 |
 | `Alt+8` | MEDIA | secondary | horizontal stack | 2 |
 | `Alt+9` | MAIL | secondary | vertical stack | 2 |
-| `Alt+0` | EXTRA | secondary | scrolling | 2 at a time |
+| `Alt+0` | OFFICE | secondary | columns | 3 |
 
 - `Alt+Shift+<digit>` moves the focused window there and follows it; `Ctrl+Alt+<digit>` shoves it
   there and stays put — that second one is the "this workspace is getting crowded" gesture.
@@ -29,7 +29,7 @@ there is no separate "switch monitor" step in normal use.
 - Tile counts are ceilings derived from minimum usable width on a 5120x1440 panel. Past the ceiling
   komorebi appends into a stack rather than slicing thinner; `Alt+;` unstacks one, `Alt+Shift+;`
   unstacks all, and `Alt+[` / `Alt+]` cycle within a stack.
-- MISC and EXTRA use the **scrolling** layout instead of a ceiling: a fixed number of columns stays
+- MISC uses the **scrolling** layout instead of a ceiling: a fixed number of columns stays
   visible and the rest scroll off-screen, so an overflow workspace never degenerates into slivers or
   a wall of tabs. `Alt+Shift+N` switches any workspace to it.
 - Monocle is deliberately unbound — one window on a 32:9 panel wastes it. `wmfocus` promotes the
@@ -51,21 +51,26 @@ Apps land on the right workspace on their own. There are two rule types and the 
 | --- | --- | --- |
 | DEV | — | WezTerm, Windows Terminal, VS Code, Visual Studio |
 | AGENT | — | Codex |
-| DEBUG | — | MySQL Workbench, DBeaver, MongoDB Compass, SSMS, Postman |
+| DEBUG | — | MySQL Workbench, DBeaver, MongoDB Compass, SSMS, Postman, Citrix Workspace, Docker Desktop |
 | BROWSER | — | Firefox, Chrome, Edge, Vivaldi |
 | MISC | Elgato Wave Link | Notion, Notepad++, WinMerge, WinSCP |
 | COMMS | Slack, Discord | Teams, Zoom |
 | MEDIA | Spotify, YouTube Music | — |
 | MAIL | — | Outlook (classic and new) |
+| OFFICE | — | Word, Excel, PowerPoint, OneNote, Visio |
 
 Teams and Zoom are seeded rather than pinned on purpose: meetings and screen-share often want the
 ultrawide, and a pinned rule would drag them back mid-call. Meeting/call popups are separately kept
 out of the tiling graph by `ignore_rules`.
 
 Matching is on executable name and is **case-sensitive** (`matching_strategy: Equals`) — there is no
-case-insensitive option, so a rule with the wrong casing silently never fires. Outlook uses a
-`Regex` rule with `(?i)` because Office is inconsistent about it, and is routed under both
-`outlook.exe` (classic) and `olk.exe` (new Outlook).
+case-insensitive option, so a rule with the wrong casing silently never fires. Office ships its
+classic executables in **upper case** (`WINWORD.EXE`, `EXCEL.EXE`, `POWERPNT.EXE`, `ONENOTE.EXE`,
+`VISIO.EXE`, `OUTLOOK.EXE`) and the rules must match that exactly. A `Regex` rule with `(?i)` looks
+like it should paper over this but was tested and **does not fire** for `Exe` rules on v0.1.41 —
+use `Equals` with the on-disk casing (check with `Get-ChildItem 'C:\Program
+Files\Microsoft Office\root\Office16\*.exe'`). New Outlook is separately routed as `olk.exe`, which
+really is lower case.
 
 Monitors are pinned in `display_index_preferences` by **`device_id`**, not serial number. The ASUS
 reports its `serial_number_id` intermittently — when it comes back `null`, a serial-keyed mapping

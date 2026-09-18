@@ -99,7 +99,7 @@ alt + 6                 : komorebic focus-named-workspace MISC
 alt + 7                 : komorebic focus-named-workspace COMMS
 alt + 8                 : komorebic focus-named-workspace MEDIA
 alt + 9                 : komorebic focus-named-workspace MAIL
-alt + 0                 : komorebic focus-named-workspace EXTRA
+alt + 0                 : komorebic focus-named-workspace OFFICE
 
 alt + oem_3             : komorebic focus-last-workspace
 alt + shift + oem_3     : komorebic move-to-last-workspace
@@ -114,7 +114,7 @@ alt + shift + 6         : komorebic move-to-named-workspace MISC
 alt + shift + 7         : komorebic move-to-named-workspace COMMS
 alt + shift + 8         : komorebic move-to-named-workspace MEDIA
 alt + shift + 9         : komorebic move-to-named-workspace MAIL
-alt + shift + 0         : komorebic move-to-named-workspace EXTRA
+alt + shift + 0         : komorebic move-to-named-workspace OFFICE
 
 # Shove the focused window to a workspace and stay put. This is the "this workspace is getting
 # crowded" gesture that replaces reaching for a stack.
@@ -127,4 +127,4 @@ ctrl + alt + 6          : komorebic send-to-named-workspace MISC
 ctrl + alt + 7          : komorebic send-to-named-workspace COMMS
 ctrl + alt + 8          : komorebic send-to-named-workspace MEDIA
 ctrl + alt + 9          : komorebic send-to-named-workspace MAIL
-ctrl + alt + 0          : komorebic send-to-named-workspace EXTRA
+ctrl + alt + 0          : komorebic send-to-named-workspace OFFICE

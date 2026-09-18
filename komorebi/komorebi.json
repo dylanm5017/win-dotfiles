@@ -292,6 +292,11 @@
               "kind": "Exe",
               "id": "CDViewer.exe",
               "matching_strategy": "Equals"
+            },
+            {
+              "kind": "Exe",
+              "id": "Docker Desktop.exe",
+              "matching_strategy": "Equals"
             }
           ]
         },
@@ -436,8 +441,8 @@
           "initial_workspace_rules": [
             {
               "kind": "Exe",
-              "id": "(?i)^outlook\\.exe$",
-              "matching_strategy": "Regex"
+              "id": "OUTLOOK.EXE",
+              "matching_strategy": "Equals"
             },
             {
               "kind": "Exe",
@@ -447,13 +452,38 @@
           ]
         },
         {
-          "name": "EXTRA",
-          "layout": "Scrolling",
-          "layout_options": {
-            "scrolling": {
-              "columns": 2
+          "name": "OFFICE",
+          "layout": "Columns",
+          "window_container_behaviour_rules": {
+            "3": "Append"
+          },
+          "initial_workspace_rules": [
+            {
+              "kind": "Exe",
+              "id": "WINWORD.EXE",
+              "matching_strategy": "Equals"
+            },
+            {
+              "kind": "Exe",
+              "id": "EXCEL.EXE",
+              "matching_strategy": "Equals"
+            },
+            {
+              "kind": "Exe",
+              "id": "POWERPNT.EXE",
+              "matching_strategy": "Equals"
+            },
+            {
+              "kind": "Exe",
+              "id": "ONENOTE.EXE",
+              "matching_strategy": "Equals"
+            },
+            {
+              "kind": "Exe",
+              "id": "VISIO.EXE",
+              "matching_strategy": "Equals"
             }
-          }
+          ]
         }
       ]
     }
