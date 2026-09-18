@@ -35,18 +35,10 @@ for how the palette reaches these surfaces.
   Hardware Monitor. The **Cava** visualizer needs the `cava` binary (`karlstav.cava`, in
   `packages/winget.json`); after installing it, fully **stop and start** Yasb (not reload) so it picks
   up `cava` on PATH.
-- Komorebi workspace widgets need komorebi ≥ v0.18.0. Control the bar directly with
+- Komorebi workspace widgets need komorebi ≥ v0.18.0 and Yasb ≥ v2.0.7 (below that, workspace
+  clicks stop working after the displays sleep). Control the bar directly with
   `yasbc start|stop|reload`. The komorebi built-in bar (`komorebi/komorebi.bar.json`) is kept as an
   unlinked fallback — relink it and re-add `--bar` to komorebi autostart to switch back.
-- **Workaround — workspace clicks die after the displays sleep.** Windows reissues HMONITOR handles
-  on wake, but Yasb caches its bar's handle once at startup and never recomputes it, so the komorebi
-  workspace widget can no longer resolve its screen and every click throws
-  `TypeError: 'NoneType' object is not subscriptable` into `~/.config/yasb/yasb.log`. komorebi is
-  fine here — only Yasb needs restarting. `tools/Reload-YasbOnWake.ps1 -Register` installs a
-  scheduled task that runs `yasbc reload` on the wake edge (Kernel-Power 566 filtered to
-  `NextSessionType=0`, plus 107 for a full resume); `-Status` shows recent reloads, `-Unregister`
-  removes it. Confirmed against Yasb v2.0.5 and reported upstream as
-  [amnweb/yasb#1053](https://github.com/amnweb/yasb/issues/1053) — drop the task once that ships.
 
 ## Launcher and desktop comfort
 
