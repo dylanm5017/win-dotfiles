@@ -136,6 +136,7 @@ it is gitignored and takes precedence over the committed example when present.
 
 - `dotdoctor` runs the win-dotfiles health check.
 - `powershell/Test-WinDotfiles.ps1` runs the same checks from a clean PowerShell process.
+- `-ConfigOnly` runs just the repo-side gates (config syntax, PowerShell parse, theme graph) with no dependency on host state. The `hooks/pre-commit` hook and CI both call it; the hook is wired up by `install.ps1` via `core.hooksPath`, and `dotdoctor` checks that wiring is still in place — an unset `core.hooksPath` leaves the gate inert without any sign.
 - Set `WINDOTFILES_PROFILE_DEBUG=1` before loading the profile to print per-script load times.
 - The prompt defaults to Starship when it is installed (language-aware: shows git branch/status
   and Node/.NET/Python versions in context) and falls back to the fast native prompt otherwise.

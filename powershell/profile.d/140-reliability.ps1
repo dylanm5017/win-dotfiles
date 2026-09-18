@@ -417,6 +417,16 @@ function Test-WinDotfiles {
     $results += New-WinDotfilesCheckResult 'Komorebi config exists' (Test-Path -LiteralPath (Join-Path $WinDotfilesRoot 'komorebi\komorebi.json') -PathType Leaf) (Join-Path $WinDotfilesRoot 'komorebi\komorebi.json')
     $results += New-WinDotfilesCheckResult 'whkd config exists' (Test-Path -LiteralPath (Join-Path $WinDotfilesRoot 'komorebi\whkdrc') -PathType Leaf) (Join-Path $WinDotfilesRoot 'komorebi\whkdrc')
 
+    # install.ps1 points core.hooksPath at the repo's hooks/, but a clone made without it (or a
+    # config reset) leaves the pre-commit validator silently inert — it fails open, so nothing
+    # ever reports it. Check the wiring rather than trusting it.
+    $gitCommand = Get-Command git -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($gitCommand) {
+        $hooksPath = (& $gitCommand.Source -C $WinDotfilesRoot config core.hooksPath 2>$null | Select-Object -First 1)
+        $hooksArmed = $hooksPath -and (Test-Path -LiteralPath (Join-Path $WinDotfilesRoot (Join-Path $hooksPath 'pre-commit')) -PathType Leaf)
+        $results += New-WinDotfilesCheckResult 'Git pre-commit hook armed' $hooksArmed $(if ($hooksArmed) { "core.hooksPath = $hooksPath" } else { 'core.hooksPath unset — run: git config core.hooksPath hooks' })
+    }
+
     $requiredDirectories = @($WorkspaceRoot, $ProjectsRoot, $ToolsRoot, $CacheRoot, $TempRoot, $env:STARSHIP_CACHE, $env:NPM_CONFIG_PREFIX, $env:NPM_CONFIG_CACHE, $env:PIP_CACHE_DIR, $env:DOTNET_CLI_HOME, $env:WINDOTFILES_DOTNET_ARTIFACTS_PATH, $env:NUGET_HTTP_CACHE_PATH, $env:NUGET_PLUGINS_CACHE_PATH)
     foreach ($directory in $requiredDirectories | Where-Object { $_ } | Select-Object -Unique) {
         $results += New-WinDotfilesCheckResult "Directory exists: $directory" (Test-Path -LiteralPath $directory -PathType Container) $directory
