@@ -13,10 +13,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install YAML parser
+      - name: Install YAML and TOML parsers
         shell: pwsh
-        # Lets Test-WinDotfilesConfig actually validate yasb/config.yaml (skipped when absent).
-        run: Install-Module powershell-yaml -Force -Scope CurrentUser -AllowClobber
+        # Without these, Test-WinDotfilesConfig reports yasb/config.yaml and starship.toml as
+        # skipped rather than checked — the gate silently passes on files it never parsed.
+        run: |
+          Install-Module powershell-yaml -Force -Scope CurrentUser -AllowClobber
+          Install-Module PSToml -Force -Scope CurrentUser -AllowClobber
 
       - name: Validate configs and PowerShell parse
         shell: pwsh

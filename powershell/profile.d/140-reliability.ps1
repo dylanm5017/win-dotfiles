@@ -76,6 +76,7 @@ function Test-WinDotfilesConfig {
     }
 
     $yamlModule = Get-Module -ListAvailable -Name 'powershell-yaml' -ErrorAction SilentlyContinue | Select-Object -First 1
+    $tomlModule = Get-Module -ListAvailable -Name 'PSToml' -ErrorAction SilentlyContinue | Select-Object -First 1
     $luac = Get-Command luac -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
     $wezterm = Get-Command wezterm -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
 
@@ -128,7 +129,16 @@ function Test-WinDotfilesConfig {
                     }
                 }
                 'Toml' {
-                    [void]$results.Add((New-WinDotfilesCheckResult $name $true 'skipped: no TOML parser available'))
+                    if ($tomlModule) {
+                        Import-Module 'PSToml' -ErrorAction Stop
+                        # ConvertFrom-Toml reports a parse failure as a non-terminating error, so
+                        # without -ErrorAction Stop the catch never fires and a broken file passes.
+                        $null = ConvertFrom-Toml (Get-Content -LiteralPath $path -Raw) -ErrorAction Stop
+                        [void]$results.Add((New-WinDotfilesCheckResult $name $true 'TOML OK'))
+                    }
+                    else {
+                        [void]$results.Add((New-WinDotfilesCheckResult $name $true 'skipped: install PSToml to validate'))
+                    }
                 }
                 'Lua' {
                     if ($luac) {
@@ -137,9 +147,12 @@ function Test-WinDotfilesConfig {
                         [void]$results.Add((New-WinDotfilesCheckResult $name $ok $(if ($ok) { 'Lua OK (luac -p)' } else { 'luac -p reported a syntax error' })))
                     }
                     elseif ($wezterm) {
-                        & $wezterm.Source --config-file $path ls-fonts 2>&1 | Out-Null
-                        $ok = $LASTEXITCODE -eq 0
-                        [void]$results.Add((New-WinDotfilesCheckResult $name $ok $(if ($ok) { 'Lua OK (wezterm)' } else { 'wezterm rejected the config' })))
+                        # wezterm exits 0 even when the config fails to parse — it falls back to
+                        # its defaults and only reports the problem on stderr, so the exit code
+                        # alone passes a broken file. Match the log line as well.
+                        $weztermProbe = (@(& $wezterm.Source --config-file $path ls-fonts 2>&1) -join ' ')
+                        $ok = $LASTEXITCODE -eq 0 -and $weztermProbe -notmatch '\bERROR\b'
+                        [void]$results.Add((New-WinDotfilesCheckResult $name $ok $(if ($ok) { 'Lua OK (wezterm)' } else { ($weztermProbe -replace '\s+', ' ').Trim() })))
                     }
                     else {
                         [void]$results.Add((New-WinDotfilesCheckResult $name $true 'skipped: no Lua parser available'))
