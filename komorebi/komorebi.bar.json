@@ -25,9 +25,9 @@
     "transparency_alpha": 217
   },
   "theme": {
-    "palette": "Catppuccin",
-    "name": "Mocha",
-    "accent": "Mauve"
+    "palette": "Base16",
+    "name": "RosePine",
+    "accent": "Base0E"
   },
   "left_widgets": [
     {

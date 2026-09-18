@@ -47,7 +47,7 @@ config.tab_max_width = TAB_MAX_WIDTH
 
 -- Color scheme: a WezTerm built-in, rewritten by `theme set <name>` (themes/<name>.psd1
 -- WeztermScheme). Keep the trailing marker comment intact so the switcher can find this line.
-config.color_scheme = 'Catppuccin Mocha' -- win-dotfiles:theme
+config.color_scheme = 'rose-pine' -- win-dotfiles:theme
 
 -- The Everforest Soft variants aren't among this WezTerm build's built-ins (only the darker
 -- Gogh pair), so ship them inline; custom color_schemes entries resolve by name like built-ins.

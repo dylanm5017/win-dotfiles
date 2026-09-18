@@ -175,10 +175,10 @@
   "border_offset": -1,
   "border_style": "Rounded",
   "theme": {
-    "palette": "Catppuccin",
-    "name": "Mocha",
-    "unfocused_border": "Surface1",
-    "bar_accent": "Mauve"
+    "palette": "Base16",
+    "name": "RosePine",
+    "unfocused_border": "Base03",
+    "bar_accent": "Base0E"
   },
   "stackbar": {
     "mode": "OnStack",

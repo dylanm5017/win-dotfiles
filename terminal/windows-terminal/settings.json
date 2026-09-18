@@ -245,7 +245,7 @@
 
     "profiles": {
         "defaults": {
-            "colorScheme": "Catppuccin Mocha",
+            "colorScheme": "Rose Pine",
             "cursorShape": "filledBox",
             "useAcrylic": true,
             "opacity": 95,
