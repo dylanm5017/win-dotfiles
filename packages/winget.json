@@ -19,6 +19,7 @@
                 { "PackageIdentifier": "OpenJS.NodeJS.LTS" },
                 { "PackageIdentifier": "Microsoft.DotNet.SDK.8" },
                 { "PackageIdentifier": "Microsoft.DotNet.SDK.9" },
+                { "PackageIdentifier": "Microsoft.DotNet.SDK.10" },
                 { "PackageIdentifier": "Rustlang.Rustup" },
                 { "PackageIdentifier": "GoLang.Go" },
                 { "PackageIdentifier": "Python.Python.3.12" },
@@ -30,12 +31,15 @@
                 { "PackageIdentifier": "QL-Win.QuickLook" },
                 { "PackageIdentifier": "Ditto.Ditto" },
                 { "PackageIdentifier": "File-New-Project.EarTrumpet" },
-                { "PackageIdentifier": "JanDeDobbeleer.OhMyPosh" },
                 { "PackageIdentifier": "AmN.yasb" },
                 { "PackageIdentifier": "karlstav.cava" },
-                { "PackageIdentifier": "Flow-Launcher.Flow.Launcher" },
                 { "PackageIdentifier": "RamenSoftware.Windhawk" },
-                { "PackageIdentifier": "Nilesoft.Shell" }
+                { "PackageIdentifier": "Spotify.Spotify" },
+                { "PackageIdentifier": "SlackTechnologies.Slack" },
+                { "PackageIdentifier": "Microsoft.Teams" },
+                { "PackageIdentifier": "Google.Chrome.EXE" },
+                { "PackageIdentifier": "Mozilla.Firefox" },
+                { "PackageIdentifier": "th-ch.YouTubeMusic" }
             ]
         }
     ]

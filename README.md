@@ -35,8 +35,19 @@ configs and tunes the host).
 - `packages/scoop.json` is the Scoop manifest (buckets + apps); `packages/winget.json` is a curated
   winget set (toolchain + the comfort apps `winsmooth` manages, minus machine-specific noise).
   `scoop import packages/scoop.json` / `winget import packages/winget.json` re-create them.
+- **Scope**: the manifests declare the toolchain, the desktop shell stack, and the apps this repo
+  actually drives — Spotify (themed via Spicetify) and the raise-or-launch targets in
+  `powershell/apps.json`. Everything else is installed by hand and merely *routed*: komorebi has
+  workspace rules for DBeaver, Postman, SSMS, Teams, Zoom, Citrix and friends, and a rule for an
+  app that isn't installed is a harmless no-op. Don't read the komorebi rules as an install list.
+- Each app belongs to exactly one manager. Flow Launcher and Nilesoft Shell are scoop, not winget,
+  even though both publish to winget — declaring an app twice means `install.ps1` installs it twice
+  from two sources.
 - `pkgsync` (alias `pkglist`) refreshes `packages/scoop.json` from what is currently installed,
   keeping the clean shape so diffs stay meaningful. `winget.json` is hand-curated and left alone.
+  A couple of scoop entries (`CascadiaCode-NF`, `spicetify-cli`) are the documented bootstrap path
+  but happen to be installed outside scoop on the current machine, so `pkgsync` will not list them —
+  keep them.
 
 Health check afterwards: `dotdoctor` (repo health) and `wincheck` (Windows friction).
 

@@ -42,7 +42,7 @@ for how the palette reaches these surfaces.
 
 ## Launcher and desktop comfort
 
-- [Flow Launcher](https://www.flowlauncher.com) is the launcher, on `Alt+Space` (replacing PowerToys Run, which `winsmooth` disables). Install it with winget (`Flow-Launcher.Flow.Launcher`, in `packages/winget.json`) or scoop (`Flow-Launcher`); `winsmooth -Apply` installs the theme, binds `Alt+Space`, sets the Nerd Font, and enables autostart. It's palette-themed in lock-step with the rest of the rice: `flowlauncher/win-dotfiles.xaml` carries a marked brush block the `theme` command rewrites from each theme's `YasbPalette` (see [Theming](theming.md)), and Flow hot-reloads its active theme file. Browse/install plugins from Flow's own store (`Ctrl+I` → Plugin Store). (`Win+Space` is not usable: Flow registers hotkeys via Win32 `RegisterHotKey`, and Windows permanently reserves `Win+Space` for the input-switcher. `Apply-FlowLauncher.ps1` also handles the scoop *portable* data root, not just `%APPDATA%\FlowLauncher`.)
+- [Flow Launcher](https://www.flowlauncher.com) is the launcher, on `Alt+Space` (replacing PowerToys Run, which `winsmooth` disables). Install it with scoop (`Flow-Launcher`, in `packages/scoop.json`); `winsmooth -Apply` installs the theme, binds `Alt+Space`, sets the Nerd Font, and enables autostart. It's palette-themed in lock-step with the rest of the rice: `flowlauncher/win-dotfiles.xaml` carries a marked brush block the `theme` command rewrites from each theme's `YasbPalette` (see [Theming](theming.md)), and Flow hot-reloads its active theme file. Browse/install plugins from Flow's own store (`Ctrl+I` → Plugin Store). (`Win+Space` is not usable: Flow registers hotkeys via Win32 `RegisterHotKey`, and Windows permanently reserves `Win+Space` for the input-switcher. `Apply-FlowLauncher.ps1` also handles the scoop *portable* data root, not just `%APPDATA%\FlowLauncher`.)
 - QuickLook owns file previews (`Space` on a selected file). Ditto starts with a conservative clipboard history profile: `Ctrl+Alt+V` activation, 300 entries, 14 days, multi-paste capture off, 5 MB max clip payload, and delete prompts on.
 
 ## Windhawk
@@ -63,8 +63,8 @@ menus. Install it with winget (`RamenSoftware.Windhawk`, in `packages/winget.jso
 
 ## Context menu (Nilesoft Shell)
 
-[Nilesoft Shell](https://nilesoft.org) re-skins the Windows right-click context menu. Install it with winget
-(`Nilesoft.Shell`, in `packages/winget.json`), then run `shell -register -restart` once from an elevated prompt.
+[Nilesoft Shell](https://nilesoft.org) re-skins the Windows right-click context menu. Install it with scoop
+(`nilesoft-shell`, in `packages/scoop.json`), then run `shell -register -restart` once from an elevated prompt.
 
 - It's palette-themed in lock-step with the rest of the rice: `nilesoft-shell/theme.nss` carries a marked
   `theme{}` block the `theme` command rewrites from each theme's `YasbPalette` (same pattern as Flow Launcher's

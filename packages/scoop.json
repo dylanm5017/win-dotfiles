@@ -9,6 +9,10 @@
             "Source": "https://github.com/ScoopInstaller/Extras"
         },
         {
+            "Name": "versions",
+            "Source": "https://github.com/ScoopInstaller/Versions"
+        },
+        {
             "Name": "nerd-fonts",
             "Source": "https://github.com/matthewjberger/scoop-nerd-fonts"
         }
@@ -19,14 +23,20 @@
         { "Name": "fastfetch", "Source": "main" },
         { "Name": "fd", "Source": "main" },
         { "Name": "fzf", "Source": "main" },
+        { "Name": "jq", "Source": "main" },
         { "Name": "ripgrep", "Source": "main" },
         { "Name": "starship", "Source": "main" },
+        { "Name": "uv", "Source": "main" },
         { "Name": "zoxide", "Source": "main" },
+        { "Name": "7zip", "Source": "main" },
+        { "Name": "mingw", "Source": "main" },
         { "Name": "komorebi", "Source": "extras" },
         { "Name": "whkd", "Source": "extras" },
         { "Name": "everything-powertoys", "Source": "extras" },
-        { "Name": "wezterm", "Source": "extras" },
+        { "Name": "Flow-Launcher", "Source": "extras" },
+        { "Name": "nilesoft-shell", "Source": "extras" },
         { "Name": "spicetify-cli", "Source": "extras" },
+        { "Name": "wezterm-nightly", "Source": "versions" },
         { "Name": "CascadiaCode-NF", "Source": "nerd-fonts" }
     ]
 }
