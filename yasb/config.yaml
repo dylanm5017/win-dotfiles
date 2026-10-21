@@ -53,7 +53,7 @@ bars:
       center: ["media"]
       right: ["sound_group", "dev_group"]
 
-  # Rich, detail bar on the smaller ASUS 1080p screen (compact labels to fit 1920px).
+  # Rich, detail bar on the ASUS portrait screen (compact labels to fit 1080px).
   rich-bar:
     enabled: true
     screens: ['*']

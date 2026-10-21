@@ -6,7 +6,7 @@
 
 ## Workspaces
 
-Ten named workspaces, six on the ultrawide and four on the secondary. `Alt+<digit>` is
+Ten named workspaces, six on the ultrawide and four on the secondary (a 1080x1920 portrait panel to the right of the ultrawide). `Alt+<digit>` is
 **monitor-agnostic**: komorebi focuses the owning monitor first, so one keypress crosses displays and
 there is no separate "switch monitor" step in normal use.
 
@@ -18,15 +18,16 @@ there is no separate "switch monitor" step in normal use.
 | `Alt+4` | DEBUG | ultrawide | ultrawide main-stack | 5 |
 | `Alt+5` | BROWSER | ultrawide | columns | 4 |
 | `Alt+6` | MISC | ultrawide | scrolling | 4 at a time |
-| `Alt+7` | COMMS | secondary | grid | 4 |
+| `Alt+7` | COMMS | secondary | rows | 3 |
 | `Alt+8` | MEDIA | secondary | horizontal stack | 2 |
-| `Alt+9` | MAIL | secondary | vertical stack | 2 |
-| `Alt+0` | OFFICE | secondary | columns | 3 |
+| `Alt+9` | MAIL | secondary | horizontal stack | 2 |
+| `Alt+0` | OFFICE | secondary | rows | 2 |
 
 - `Alt+Shift+<digit>` moves the focused window there and follows it; `Ctrl+Alt+<digit>` shoves it
   there and stays put — that second one is the "this workspace is getting crowded" gesture.
 - `Alt+` `` ` `` jumps to the last workspace, `Alt+Shift+` `` ` `` moves a window to it.
-- Tile counts are ceilings derived from minimum usable width on a 5120x1440 panel. Past the ceiling
+- Tile counts are ceilings derived from minimum usable width on a 5120x1440 panel (and minimum
+  usable height on the portrait secondary, which only ever splits top-to-bottom). Past the ceiling
   komorebi appends into a stack rather than slicing thinner; `Alt+;` unstacks one, `Alt+Shift+;`
   unstacks all, and `Alt+[` / `Alt+]` cycle within a stack.
 - MISC uses the **scrolling** layout instead of a ceiling: a fixed number of columns stays

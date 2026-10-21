@@ -374,9 +374,9 @@
       "workspaces": [
         {
           "name": "COMMS",
-          "layout": "Grid",
+          "layout": "Rows",
           "window_container_behaviour_rules": {
-            "4": "Append"
+            "3": "Append"
           },
           "workspace_rules": [
             {
@@ -434,7 +434,7 @@
         },
         {
           "name": "MAIL",
-          "layout": "VerticalStack",
+          "layout": "HorizontalStack",
           "window_container_behaviour_rules": {
             "2": "Append"
           },
@@ -453,9 +453,9 @@
         },
         {
           "name": "OFFICE",
-          "layout": "Columns",
+          "layout": "Rows",
           "window_container_behaviour_rules": {
-            "3": "Append"
+            "2": "Append"
           },
           "initial_workspace_rules": [
             {
