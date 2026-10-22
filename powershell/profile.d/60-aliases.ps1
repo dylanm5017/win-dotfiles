@@ -54,6 +54,18 @@ function gpush {
 }
 Set-Alias -Name gpsh -Value gpush -Force
 
+function gpo {
+    git push --set-upstream origin @args
+}
+
+function gme {
+    git merge @args
+}
+
+function gcst {
+    git checkout staging @args
+}
+
 function grep {
     if (Test-Command rg -Application) {
         rg @args
