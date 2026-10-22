@@ -3,8 +3,10 @@
 # the final output before the first prompt. Opt out with `$env:WINDOTFILES_GREETING = 'off'`.
 # Skipped automatically for non-interactive, redirected, and Codex shells.
 
-if (-not $IsInteractiveShell -or $IsCodexShell) { return }
-if ($env:WINDOTFILES_GREETING -and $env:WINDOTFILES_GREETING.ToLowerInvariant() -in 'off', '0', 'false', 'none') { return }
+# No top-level `return`: profile.ps1 concatenates profile.d into one bundle, where it would end the
+# whole profile instead of this file.
+$WinDotfilesGreetingEnabled = $IsInteractiveShell -and -not $IsCodexShell -and
+-not ($env:WINDOTFILES_GREETING -and $env:WINDOTFILES_GREETING.ToLowerInvariant() -in 'off', '0', 'false', 'none')
 
 $WinDotfilesTips = @(
     'theme <name>  reskins everything (ashes, dracula, nord, mocha).'
@@ -46,10 +48,12 @@ function Show-WinDotfilesGreeting {
 # Override `clear` (and its `cls` alias) so a cleared screen returns to the startup greeting
 # instead of an empty prompt. `[char]27` sequences: 2J clears the screen, 3J clears scrollback,
 # H homes the cursor. Falls back to the built-in clear if rendering the greeting fails.
-function Clear-Host {
-    $esc = [char]27
-    [Console]::Write("$esc[2J$esc[3J$esc[H")
+if ($WinDotfilesGreetingEnabled) {
+    function Clear-Host {
+        $esc = [char]27
+        [Console]::Write("$esc[2J$esc[3J$esc[H")
+        try { Show-WinDotfilesGreeting } catch { Write-Verbose "Greeting skipped: $($_.Exception.Message)" }
+    }
+
     try { Show-WinDotfilesGreeting } catch { Write-Verbose "Greeting skipped: $($_.Exception.Message)" }
 }
-
-try { Show-WinDotfilesGreeting } catch { Write-Verbose "Greeting skipped: $($_.Exception.Message)" }

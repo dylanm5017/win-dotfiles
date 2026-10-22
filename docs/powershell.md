@@ -28,6 +28,14 @@ Conventions, so new modules stay consistent:
   gitignored `powershell/profile.local.ps1` (sourced last), and private project group names go in
   `powershell/projects.local.json` — neither is committed. Set `WINDOTFILES_PROFILE_DEBUG=1` to
   print per-module load timings, or run `profileperf` for a timing table.
+- **Bundled load**: normal shells don't dot-source the modules one by one. The loader
+  concatenates them into the gitignored `.cache/profile.bundle.ps1` and loads that, which saves
+  about 100 ms per shell (each separate file carries ~6 ms of fixed overhead). The bundle's first
+  line records every source's mtime and size, so any edit triggers a rebuild on the next shell. A
+  module must not use a top-level `return`/`exit`, a `param` block, or `using` statements; these
+  change meaning in a bundle, so the loader warns and falls back to per-file loading. Debug mode
+  and `WINDOTFILES_PROFILE_BUNDLE=0` also load per file, and per-file loading gives accurate error
+  line numbers.
 
 ## Alias tips
 
@@ -143,6 +151,6 @@ it is gitignored and takes precedence over the committed example when present.
   Force either with `WINDOTFILES_PROMPT=starship` or `WINDOTFILES_PROMPT=native`. The Starship
   prompt uses a **transient prompt** — once a command runs, its prompt collapses to a bare `❯`
   so scrollback stays focused on output.
-- `profileperf` reports profile script timing, Starship prompt timing, and cached project lookup timing; add `-RefreshProjects` to include a full project scan.
+- `profileperf` reports the bundled load time (what new shells pay), per-script timing, Starship prompt timing, and cached project lookup timing; add `-RefreshProjects` to include a full project scan.
 - Codex shells prefer `C:\tmp\codex` when it supports create/delete; otherwise they fall back to repo-local `.tmp\codex` for `TEMP`/`TMP`/`TMPDIR`, `DOTNET_CLI_HOME`, .NET artifacts, and NuGet transient caches, with MSBuild node reuse disabled so sandboxed .NET builds avoid user-profile temp/state permission issues where possible.
 - Add machine-specific settings to `powershell/profile.local.ps1`; it is ignored by git.

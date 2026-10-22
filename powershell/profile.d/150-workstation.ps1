@@ -342,9 +342,16 @@ function Measure-WinWorkstationProfileLoad {
             }
         })
 
+    # Debug mode loads per file for the breakdown above; normal shells load the bundle, so time that
+    # path separately as the number that reflects real startup.
+    $bundledCommand = "`$sw = [Diagnostics.Stopwatch]::StartNew(); . '$escapedProfilePath' *> `$null; 'BundledLoad ' + `$sw.ElapsedMilliseconds"
+    $bundledOutput = & $pwsh.Source -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command $bundledCommand 2>$null
+    $loadMs = @($bundledOutput | Where-Object { $_ -match '^BundledLoad (\d+)' } | ForEach-Object { [int]$Matches[1] }) | Select-Object -First 1
+
     [PSCustomObject]@{
         ProcessMs = [math]::Round($processTime.TotalMilliseconds, 0)
         ScriptMs  = [math]::Round(($scripts | Measure-Object -Property Ms -Sum).Sum, 0)
+        LoadMs    = $loadMs
         Scripts   = $scripts
     }
 }
@@ -745,7 +752,10 @@ function Invoke-WinDotfilesProfilePerf {
     $profileTiming = Measure-WinWorkstationProfileLoad
 
     if ($profileTiming) {
-        [void]$rows.Add((New-WinDotfilesProfilePerfRow -Category 'Profile' -Name 'total scripts' -Ms ([int]$profileTiming.ScriptMs) -Detail "process=$($profileTiming.ProcessMs)ms"))
+        if ($null -ne $profileTiming.LoadMs) {
+            [void]$rows.Add((New-WinDotfilesProfilePerfRow -Category 'Profile' -Name 'bundled load' -Ms ([int]$profileTiming.LoadMs) -Detail 'what new shells pay'))
+        }
+        [void]$rows.Add((New-WinDotfilesProfilePerfRow -Category 'Profile' -Name 'total scripts' -Ms ([int]$profileTiming.ScriptMs) -Detail "per-file debug load; process=$($profileTiming.ProcessMs)ms"))
         foreach ($scriptTiming in @($profileTiming.Scripts | Sort-Object Ms -Descending)) {
             [void]$rows.Add((New-WinDotfilesProfilePerfRow -Category 'Profile script' -Name $scriptTiming.Script -Ms ([int]$scriptTiming.Ms)))
         }
@@ -802,8 +812,9 @@ function Invoke-WinWorkstationCheck {
 
     $profileTiming = Measure-WinWorkstationProfileLoad
     if ($profileTiming) {
-        $status = if ($profileTiming.ScriptMs -le 350) { 'OK' } elseif ($profileTiming.ScriptMs -le 750) { 'Warn' } else { 'Slow' }
-        [void]$results.Add((New-WinWorkstationCheckResult -Category 'Shell' -Name 'PowerShell profile load' -Status $status -Detail "scripts=$($profileTiming.ScriptMs)ms process=$($profileTiming.ProcessMs)ms" -Recommendation 'Use WINDOTFILES_PROFILE_DEBUG=1 for per-script detail.'))
+        $loadMs = if ($null -ne $profileTiming.LoadMs) { $profileTiming.LoadMs } else { $profileTiming.ScriptMs }
+        $status = if ($loadMs -le 350) { 'OK' } elseif ($loadMs -le 750) { 'Warn' } else { 'Slow' }
+        [void]$results.Add((New-WinWorkstationCheckResult -Category 'Shell' -Name 'PowerShell profile load' -Status $status -Detail "load=$($loadMs)ms per-file=$($profileTiming.ScriptMs)ms process=$($profileTiming.ProcessMs)ms" -Recommendation 'Use WINDOTFILES_PROFILE_DEBUG=1 for per-script detail.'))
 
         if ($Detailed) {
             foreach ($scriptTiming in @($profileTiming.Scripts | Sort-Object Ms -Descending | Select-Object -First 8)) {
