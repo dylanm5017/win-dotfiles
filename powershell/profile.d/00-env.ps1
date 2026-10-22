@@ -107,11 +107,14 @@ function Test-Command {
         [switch]$Application
     )
 
+    # Literal lookup: callers pass arbitrary tokens (e.g. history lines), and `[` would otherwise
+    # throw as an invalid wildcard pattern.
+    $literal = [WildcardPattern]::Escape($Name)
     if ($Application) {
-        [bool](Get-Command -Name $Name -CommandType Application -ErrorAction SilentlyContinue)
+        [bool](Get-Command -Name $literal -CommandType Application -ErrorAction SilentlyContinue)
     }
     else {
-        [bool](Get-Command -Name $Name -ErrorAction SilentlyContinue)
+        [bool](Get-Command -Name $literal -ErrorAction SilentlyContinue)
     }
 }
 
