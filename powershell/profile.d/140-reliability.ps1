@@ -331,6 +331,9 @@ function Test-WinDotfilesTheme {
     if ($weztermText -and $weztermText -match "(?m)^\s*config\.color_scheme\s*=\s*'([^']+)'" -and $Matches[1] -ne $theme.WeztermScheme) {
         [void]$drift.Add("wezterm scheme is '$($Matches[1])', expected '$($theme.WeztermScheme)'")
     }
+    if ($weztermText -and $weztermText -match "(?m)^local THEME_ACCENT\s*=\s*'([^']+)'" -and $Matches[1] -ne $theme.Accent) {
+        [void]$drift.Add("wezterm accent is '$($Matches[1])', expected '$($theme.Accent)'")
+    }
     if ($terminalDefault -and $terminalDefault -ne $theme.ColorScheme) {
         [void]$drift.Add("windows-terminal colorScheme is '$terminalDefault', expected '$($theme.ColorScheme)'")
     }

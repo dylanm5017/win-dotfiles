@@ -1,7 +1,7 @@
 -- win-dotfiles WezTerm config (try-alongside Windows Terminal).
 -- Linked to ~/.config/wezterm/wezterm.lua by install.ps1 / winsmooth -Apply.
 -- The color scheme is a WezTerm built-in, kept in lock-step with the rest of the system
--- by the `theme` command (which rewrites the marked color_scheme line below).
+-- by the `theme` command (which rewrites the marked color_scheme and accent lines below).
 
 local wezterm = require 'wezterm'
 local act = wezterm.action
@@ -13,6 +13,7 @@ config.default_cwd = 'C:/Workspace'
 
 config.font = wezterm.font_with_fallback { 'RecMonoCasual Nerd Font', 'CaskaydiaCove NF', 'Consolas' }
 config.font_size = 14.0
+config.line_height = 1.1
 
 -- Window: minimal chrome so komorebi owns the frame. Subtle acrylic frost to echo the
 -- frosted yasb bars + Windows Terminal (useAcrylic); kept conservative (0.94) so text
@@ -21,7 +22,7 @@ config.window_decorations = 'RESIZE'
 config.window_background_opacity = 0.94
 config.win32_system_backdrop = 'Acrylic'
 -- Extra top padding so terminal content isn't crammed right up against the tab/status bar.
-config.window_padding = { left = 10, right = 10, top = 18, bottom = 8 }
+config.window_padding = { left = 14, right = 14, top = 18, bottom = 8 }
 -- Base off; update-right-status turns it on per-window only when there is scrollback to scroll
 -- and we're not inside a full-screen TUI.
 config.enable_scroll_bar = false
@@ -36,7 +37,7 @@ config.switch_to_last_active_tab_when_closing_tab = true
 config.status_update_interval = 5000
 
 -- Tabs: the bar stays visible even with one tab so the right-status line (workspace, project,
--- git branch, battery, clock) is always shown. The fancy tab bar is used for its built-in
+-- git branch, battery) is always shown. The fancy tab bar is used for its built-in
 -- vertical padding, so tabs + status aren't crammed against the window's top edge.
 config.hide_tab_bar_if_only_one_tab = false
 config.use_fancy_tab_bar = true
@@ -47,6 +48,9 @@ config.tab_max_width = TAB_MAX_WIDTH
 -- Color scheme: a WezTerm built-in, rewritten by `theme set <name>` (themes/<name>.psd1
 -- WeztermScheme). Keep the trailing marker comment intact so the switcher can find this line.
 config.color_scheme = 'Gruvbox dark, medium (base16)' -- win-dotfiles:theme
+-- The system-wide accent (themes/<name>.psd1 Accent), rewritten by `theme set <name>` too. ANSI
+-- slots can't supply this: schemes don't agree on which one holds a theme's signature color.
+local THEME_ACCENT = '#FE8019' -- win-dotfiles:theme-accent
 
 -- The Everforest Soft variants aren't among this WezTerm build's built-ins (only the darker
 -- Gogh pair), so ship them inline; custom color_schemes entries resolve by name like built-ins.
@@ -108,12 +112,21 @@ local scheme = (config.color_schemes or {})[config.color_scheme]
   or wezterm.color.get_builtin_schemes()[config.color_scheme] or {}
 local s_bg = scheme.background or '#1e1e2e'
 local s_fg = scheme.foreground or '#cdd6f4'
-local s_ansi = scheme.ansi or {}
 local s_bright = scheme.brights or {}
-local s_accent = s_ansi[6] or s_fg   -- magenta/pink, echoing the Starship + fastfetch accents
+local s_accent = THEME_ACCENT
 local s_dim = s_bright[1] or s_fg    -- muted grey for inactive chrome
 
+-- One step off the background, toward the foreground, so it works for dark and light schemes.
+local function surface_of(hex)
+  local color = wezterm.color.parse(hex)
+  local _, _, lightness = color:hsla()
+  return tostring(lightness < 0.5 and color:lighten_fixed(0.08) or color:darken_fixed(0.08))
+end
+local s_surface = surface_of(s_bg)
+
 config.colors = {
+  split = s_dim,
+  scrollbar_thumb = s_surface,
   tab_bar = {
     background = s_bg,
     active_tab = { bg_color = s_accent, fg_color = s_bg, intensity = 'Bold' },
@@ -133,7 +146,7 @@ config.command_palette_fg_color = s_fg
 -- than the retro bar so tabs and the status pills aren't jammed against the top edge.
 config.window_frame = {
   font = wezterm.font { family = 'RecMonoCasual Nerd Font', weight = 'Regular' },
-  font_size = 10.0,
+  font_size = 12.0,
   active_titlebar_bg = s_bg,
   inactive_titlebar_bg = s_bg,
 }
@@ -320,13 +333,14 @@ local ICON_WS = utf8.char(0xf009) -- th-large (workspaces)
 local ICON_DIR = utf8.char(0xf07b) -- folder
 local ICON_GIT = utf8.char(0xe0a0) -- git branch
 local ICON_BATT = utf8.char(0xf240) -- battery
-local ICON_CLOCK = utf8.char(0xf017) -- clock
 
 wezterm.on('update-right-status', function(window, pane)
   local p = window:effective_config().resolved_palette or {}
+  -- Use the window's own palette, not the s_* locals: this handler can belong to a config pass
+  -- that resolved a different light/dark scheme than the one the window is showing.
   local bg = p.background or s_bg
-  local ansi = p.ansi or {}
-  local bright = p.brights or {}
+  local fg = p.foreground or s_fg
+  local surface = surface_of(bg)
 
   local cells = {}
   local function attr(fg, back)
@@ -334,10 +348,10 @@ wezterm.on('update-right-status', function(window, pane)
     table.insert(cells, { Foreground = { Color = fg } })
   end
   -- Rounded pill: color cap on the bar bg, then bg-coloured text on the color, then closing cap.
-  local function pill(color, icon, str)
+  local function pill(color, icon, str, text_color)
     attr(color, bg)
     table.insert(cells, { Text = CAP_L })
-    attr(bg, color)
+    attr(text_color or bg, color)
     table.insert(cells, { Text = ' ' .. icon .. ' ' .. str .. ' ' })
     attr(color, bg)
     table.insert(cells, { Text = CAP_R })
@@ -345,21 +359,20 @@ wezterm.on('update-right-status', function(window, pane)
     table.insert(cells, { Text = ' ' })
   end
 
-  pill(ansi[6] or '#ff79c6', ICON_WS, window:active_workspace())
+  -- Only the workspace carries the accent; the rest stay quiet so it reads as the one signal.
+  pill(s_accent, ICON_WS, window:active_workspace())
 
   local cwd = cwd_path(pane)
   if cwd then
-    pill(ansi[5] or '#bd93f9', ICON_DIR, basename(cwd))
+    pill(surface, ICON_DIR, basename(cwd), fg)
     local branch = git_branch(cwd)
-    if branch ~= '' then pill(ansi[3] or '#50fa7b', ICON_GIT, branch) end
+    if branch ~= '' then pill(surface, ICON_GIT, branch, fg) end
   end
 
   local batt = wezterm.battery_info()
   if batt and #batt > 0 then
-    pill(ansi[4] or '#f1fa8c', ICON_BATT, string.format('%.0f%%', batt[1].state_of_charge * 100))
+    pill(surface, ICON_BATT, string.format('%.0f%%', batt[1].state_of_charge * 100), fg)
   end
-
-  pill(bright[1] or '#6272a4', ICON_CLOCK, wezterm.strftime '%H:%M')
 
   window:set_right_status(wezterm.format(cells))
 

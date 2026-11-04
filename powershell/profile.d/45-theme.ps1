@@ -296,6 +296,9 @@ function Update-WinDotfilesThemeConfigFiles {
     Set-WinDotfilesFileContent -Path $wezterm `
         -Pattern "config\.color_scheme\s*=\s*'[^']*'\s*-- win-dotfiles:theme" `
         -Replacement ("config.color_scheme = '{0}' -- win-dotfiles:theme" -f $Theme.WeztermScheme)
+    Set-WinDotfilesFileContent -Path $wezterm `
+        -Pattern "local THEME_ACCENT\s*=\s*'[^']*'\s*-- win-dotfiles:theme-accent" `
+        -Replacement ("local THEME_ACCENT = '{0}' -- win-dotfiles:theme-accent" -f $Theme.Accent)
 
     # Starship: flip the active palette line. No `$` anchor: starship.toml is CRLF, and a
     # trailing `\r` before the newline makes `"$` fail, which previously left the prompt
