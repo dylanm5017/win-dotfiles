@@ -6,7 +6,7 @@
   overlay into the live `settings.json`, preserving machine-specific profiles/GUIDs — so the
   terminal look is version-controlled. Edit the overlay, not the live file.
 - WezTerm is available to try alongside Windows Terminal: `terminal/wezterm/wezterm.lua`
-  (same theme and font, via a built-in color scheme) is linked to `~/.config/wezterm/wezterm.lua`
+  (same theme via a built-in color scheme, `RecMonoCasual Nerd Font`) is linked to `~/.config/wezterm/wezterm.lua`
   by `winsmooth`/`install.ps1`. `Alt+Enter` launches the terminal (WezTerm if installed, else
   Windows Terminal). Its config is Lua, so it does more than the static overlay:
   - **Status bar** — the right side of the tab bar shows the active workspace, current project

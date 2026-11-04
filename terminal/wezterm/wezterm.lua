@@ -11,9 +11,8 @@ local config = wezterm.config_builder and wezterm.config_builder() or {}
 config.default_prog = { 'pwsh.exe', '-NoLogo' }
 config.default_cwd = 'C:/Workspace'
 
--- Font: same Nerd Font as the bar and Windows Terminal.
-config.font = wezterm.font_with_fallback { 'CaskaydiaCove NF', 'Cascadia Code', 'Consolas' }
-config.font_size = 11.0
+config.font = wezterm.font_with_fallback { 'RecMonoCasual Nerd Font', 'CaskaydiaCove NF', 'Consolas' }
+config.font_size = 14.0
 
 -- Window: minimal chrome so komorebi owns the frame. Subtle acrylic frost to echo the
 -- frosted yasb bars + Windows Terminal (useAcrylic); kept conservative (0.94) so text
@@ -133,7 +132,7 @@ config.command_palette_fg_color = s_fg
 -- Fancy tab bar frame: match the scheme background and give the bar a little more height/padding
 -- than the retro bar so tabs and the status pills aren't jammed against the top edge.
 config.window_frame = {
-  font = wezterm.font { family = 'CaskaydiaCove NF', weight = 'Regular' },
+  font = wezterm.font { family = 'RecMonoCasual Nerd Font', weight = 'Regular' },
   font_size = 10.0,
   active_titlebar_bg = s_bg,
   inactive_titlebar_bg = s_bg,
