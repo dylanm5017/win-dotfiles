@@ -1,7 +1,7 @@
-# win-dotfiles Starship prompt.
-# Two-line, Nerd Font (CaskaydiaCove NF) prompt with per-theme palettes. The `theme` command
-# flips the active `palette` line below to recolor the prompt in lock-step with the terminal,
-# window manager, and desktop. Starship reads this file directly via $env:STARSHIP_CONFIG.
+# win-dotfiles Starship prompt, tuned for WezTerm with a Nerd Font. Two lines: location, git state
+# and anything worth noticing on the first, the input on the second. The `theme` command flips the
+# active `palette` line below to recolor the prompt in lock-step with the terminal, window manager,
+# and desktop. Starship reads this file directly via $env:STARSHIP_CONFIG.
 add_newline = true
 command_timeout = 500
 scan_timeout = 10
@@ -9,80 +9,209 @@ scan_timeout = 10
 # Active palette — rewritten by `theme set <name>` (themes/<name>.psd1 StarshipPalette).
 palette = "gruvbox"
 
-# Core modules reference the active palette's roles, so flipping `palette` above recolors the
-# prompt in lock-step with the rest of the theme. Keep the default starship layout; only restyle.
+# An explicit list, so a module only appears here once it has been restyled below.
+format = """
+$directory\
+$git_branch\
+$git_state\
+$git_status\
+$status\
+$cmd_duration\
+$package\
+$nodejs\
+$deno\
+$bun\
+$python\
+$dotnet\
+$rust\
+$golang\
+$java\
+$lua\
+$line_break\
+$character"""
+
 [directory]
-style = "bold path"
+style = "bold accent"
+read_only = " ro"
+read_only_style = "muted"
+format = "[$path]($style)[$read_only]($read_only_style)  "
 
 [git_branch]
-style = "bold branch"
+style = "text"
+format = "[$symbol$branch(:$remote_branch)]($style)  "
 
+[git_state]
+style = "warn"
+format = '[\($state( $progress_current/$progress_total)\)]($style)  '
+
+# Icons are Nerd Font codepoints. Each type carries its own color, and stashes are left out of the
+# format on purpose: a long-lived stash list says nothing about the work in front of you.
 [git_status]
+style = "warn"
+format = "([$conflicted$staged$modified$renamed$typechanged$deleted$untracked$ahead_behind]($style) )"
+conflicted = "[\uf071 ${count}](bold err) "
+staged = "[\uf00c ${count}](ok) "
+modified = "[\uf040 ${count}](warn) "
+renamed = "[\uf061 ${count}](warn) "
+typechanged = "[\uf0ec ${count}](warn) "
+deleted = "[\uf014 ${count}](err) "
+untracked = "[\uf128 ${count}](muted) "
+ahead = "[\uf062 ${count}](accent) "
+behind = "[\uf063 ${count}](accent) "
+diverged = "[\uf062 ${ahead_count} \uf063 ${behind_count}](accent) "
+[status]
+disabled = false
 style = "bold err"
+symbol = "✗"
+format = "[$symbol $status]($style)  "
+
+[cmd_duration]
+style = "muted"
+format = "[$duration]($style)  "
+
+[package]
+style = "muted"
+symbol = "pkg "
+version_format = "${raw}"
+format = "[$symbol$version]($style)  "
+
+[nodejs]
+style = "muted"
+symbol = "node "
+version_format = "${raw}"
+format = "[$symbol($version)]($style)  "
+
+[deno]
+style = "muted"
+symbol = "deno "
+version_format = "${raw}"
+format = "[$symbol($version)]($style)  "
+
+[bun]
+style = "muted"
+symbol = "bun "
+version_format = "${raw}"
+format = "[$symbol($version)]($style)  "
+
+[python]
+style = "muted"
+symbol = "py "
+version_format = "${raw}"
+format = '[$symbol($version)( \($virtualenv\))]($style)  '
+
+[dotnet]
+style = "muted"
+symbol = ".NET "
+version_format = "${raw}"
+format = "[$symbol($version)]($style)  "
+
+[rust]
+style = "muted"
+symbol = "rust "
+version_format = "${raw}"
+format = "[$symbol($version)]($style)  "
+
+[golang]
+style = "muted"
+symbol = "go "
+version_format = "${raw}"
+format = "[$symbol($version)]($style)  "
+
+[java]
+style = "muted"
+symbol = "java "
+version_format = "${raw}"
+format = "[$symbol($version)]($style)  "
+
+[lua]
+style = "muted"
+symbol = "lua "
+version_format = "${raw}"
+format = "[$symbol($version)]($style)  "
 
 [character]
-success_symbol = "[❯](bold ok)"
+success_symbol = "[❯](bold accent)"
 error_symbol = "[❯](bold err)"
-vimcmd_symbol = "[❮](bold ok)"
+vimcmd_symbol = "[❮](bold accent)"
 
-# Per-theme palettes. Each defines the four roles the modules above consume; `theme <name>`
-# selects one by rewriting the `palette` line. Colors come from each scheme in themes/<name>.psd1.
+# Per-theme palettes, one per themes/<name>.psd1: accent is its Accent, and text, muted and warn are
+# its YasbPalette text, subtext and warn. `theme <name>` selects one by rewriting the `palette` line.
 [palettes.mocha]   # Catppuccin Mocha
-path = "#89b4fa"   # blue
-branch = "#cba6f7" # mauve
+accent = "#cba6f7"
+text = "#cdd6f4"
+muted = "#a6adc8"
+warn = "#f9e2af"
 ok = "#a6e3a1"     # green
 err = "#f38ba8"    # red
 
 [palettes.latte]   # Catppuccin Latte (light)
-path = "#1e66f5"   # blue
-branch = "#8839ef" # mauve
+accent = "#8839ef"
+text = "#4C4F69"
+muted = "#6C6F85"
+warn = "#DF8E1D"
 ok = "#40a02b"     # green
 err = "#d20f39"    # red
 
 [palettes.ashes]   # Base16 Ashes (muted)
-path = "#95aec7"   # base0C
-branch = "#ae95c7" # base0D
+accent = "#95aec7"
+text = "#C7CCD1"
+muted = "#ADB3BA"
+warn = "#C7C795"
 ok = "#95c7ae"     # base0B
 err = "#c7ae95"    # base08
 
 [palettes.dracula]
-path = "#8be9fd"   # cyan
-branch = "#bd93f9" # purple
+accent = "#bd93f9"
+text = "#F8F8F2"
+muted = "#6272A4"
+warn = "#F1FA8C"
 ok = "#50fa7b"     # green
 err = "#ff5555"    # red
 
 [palettes.nord]
-path = "#81a1c1"   # nord9
-branch = "#b48ead" # nord15
+accent = "#88c0d0"
+text = "#E5E9F0"
+muted = "#81A1C1"
+warn = "#EBCB8B"
 ok = "#a3be8c"     # nord14
 err = "#bf616a"    # nord11
 
 [palettes.gruvbox]
-path = "#83a598"   # blue
-branch = "#d3869b" # purple
+accent = "#fe8019"
+text = "#ebdbb2"
+muted = "#a89984"
+warn = "#fabd2f"
 ok = "#b8bb26"     # green
 err = "#fb4934"    # red
 
 [palettes.gruvbox-material]
-path = "#89b482"   # aqua
-branch = "#ddc7a1" # cream accent
+accent = "#ddc7a1"
+text = "#D4BE98"
+muted = "#928374"
+warn = "#D8A657"
 ok = "#a9b665"     # green
 err = "#ea6962"    # red
 
 [palettes.everforest]   # Everforest Dark Soft
-path = "#7fbbb3"   # blue
-branch = "#a7c080" # sage green accent
+accent = "#a7c080"
+text = "#D3C6AA"
+muted = "#859289"
+warn = "#DBBC7F"
 ok = "#83c092"     # aqua
 err = "#e67e80"    # red
 
 [palettes.everforest-light]   # Everforest Light Soft
-path = "#3a94c5"   # blue
-branch = "#8da101" # sage green accent
+accent = "#8da101"
+text = "#5C6A72"
+muted = "#939F91"
+warn = "#DFA000"
 ok = "#35a77c"     # aqua
 err = "#f85552"    # red
 
 [palettes.rosepine]
-path = "#c4a7e7"   # iris
-branch = "#ebbcba" # rose
+accent = "#ebbcba"
+text = "#e0def4"
+muted = "#908caa"
+warn = "#f6c177"
 ok = "#9ccfd8"     # foam
 err = "#eb6f92"    # love
