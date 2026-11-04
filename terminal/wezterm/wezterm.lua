@@ -28,7 +28,12 @@ config.window_padding = { left = 14, right = 14, top = 18, bottom = 8 }
 config.enable_scroll_bar = false
 config.scrollback_lines = 10000
 config.audible_bell = 'Disabled'
-config.default_cursor_style = 'SteadyBlock'
+config.default_cursor_style = 'BlinkingBar'
+config.cursor_thickness = '2px'
+config.cursor_blink_rate = 600
+config.cursor_blink_ease_in = 'EaseIn'
+config.cursor_blink_ease_out = 'EaseOut'
+config.animation_fps = 60
 config.max_fps = 120
 -- Dim the panes you aren't typing in, so the active split is obvious without a border.
 config.inactive_pane_hsb = { brightness = 0.9 }
@@ -36,8 +41,8 @@ config.switch_to_last_active_tab_when_closing_tab = true
 -- The status bar shells out (git); repaint it every 5s instead of every second.
 config.status_update_interval = 5000
 
--- Tabs: the bar stays visible even with one tab so the right-status line (workspace, project,
--- git branch, battery) is always shown. The fancy tab bar is used for its built-in
+-- Tabs: the bar stays visible even with one tab so the right-status line (location, git branch,
+-- battery) is always shown. The fancy tab bar is used for its built-in
 -- vertical padding, so tabs + status aren't crammed against the window's top edge.
 config.hide_tab_bar_if_only_one_tab = false
 config.use_fancy_tab_bar = true
@@ -323,16 +328,14 @@ wezterm.on('format-tab-title', function(tab, _tabs, _panes, _cfg, _hover, max_wi
 end)
 
 -- ---------------------------------------------------------------------------
--- Status bar: rounded pills on the right of the tab bar, tinted from the live scheme.
+-- Status bar: icon + text segments on the right of the tab bar, tinted from the live scheme.
 -- ---------------------------------------------------------------------------
 
 -- Nerd Font glyphs, built from codepoints so the source stays plain ASCII (swap freely).
-local CAP_L = utf8.char(0xe0b6)   -- rounded left cap
-local CAP_R = utf8.char(0xe0b4)   -- rounded right cap
-local ICON_WS = utf8.char(0xf009) -- th-large (workspaces)
 local ICON_DIR = utf8.char(0xf07b) -- folder
 local ICON_GIT = utf8.char(0xe0a0) -- git branch
 local ICON_BATT = utf8.char(0xf240) -- battery
+local PATH_SEPARATOR = utf8.char(0x203a) -- single right-pointing angle quote
 
 wezterm.on('update-right-status', function(window, pane)
   local p = window:effective_config().resolved_palette or {}
@@ -340,38 +343,41 @@ wezterm.on('update-right-status', function(window, pane)
   -- that resolved a different light/dark scheme than the one the window is showing.
   local bg = p.background or s_bg
   local fg = p.foreground or s_fg
-  local surface = surface_of(bg)
+  local dim = (p.brights or {})[1] or s_dim
 
   local cells = {}
   local function attr(fg, back)
     table.insert(cells, { Background = { Color = back } })
     table.insert(cells, { Foreground = { Color = fg } })
   end
-  -- Rounded pill: color cap on the bar bg, then bg-coloured text on the color, then closing cap.
-  local function pill(color, icon, str, text_color)
-    attr(color, bg)
-    table.insert(cells, { Text = CAP_L })
-    attr(text_color or bg, color)
-    table.insert(cells, { Text = ' ' .. icon .. ' ' .. str .. ' ' })
-    attr(color, bg)
-    table.insert(cells, { Text = CAP_R })
-    attr(bg, bg)
-    table.insert(cells, { Text = ' ' })
+  local function segment(icon, str)
+    attr(fg, bg)
+    table.insert(cells, { Text = icon .. ' ' .. str .. '   ' })
   end
-
-  -- Only the workspace carries the accent; the rest stay quiet so it reads as the one signal.
-  pill(s_accent, ICON_WS, window:active_workspace())
 
   local cwd = cwd_path(pane)
   if cwd then
-    pill(surface, ICON_DIR, basename(cwd), fg)
+    -- Only the current folder carries the accent, so it reads as the one signal on the bar.
+    local trimmed = cwd:gsub('[/\\]+$', '')
+    local parent = trimmed:match '([^/\\]+)[/\\][^/\\]+$'
+    attr(s_accent, bg)
+    table.insert(cells, { Text = ICON_DIR .. ' ' })
+    if parent then
+      attr(fg, bg)
+      table.insert(cells, { Text = parent })
+      attr(dim, bg)
+      table.insert(cells, { Text = ' ' .. PATH_SEPARATOR .. ' ' })
+    end
+    attr(s_accent, bg)
+    table.insert(cells, { Text = basename(trimmed) .. '   ' })
+
     local branch = git_branch(cwd)
-    if branch ~= '' then pill(surface, ICON_GIT, branch, fg) end
+    if branch ~= '' then segment(ICON_GIT, branch) end
   end
 
   local batt = wezterm.battery_info()
   if batt and #batt > 0 then
-    pill(surface, ICON_BATT, string.format('%.0f%%', batt[1].state_of_charge * 100), fg)
+    segment(ICON_BATT, string.format('%.0f%%', batt[1].state_of_charge * 100))
   end
 
   window:set_right_status(wezterm.format(cells))

@@ -9,9 +9,9 @@
   (same theme via a built-in color scheme, `RecMonoCasual Nerd Font`) is linked to `~/.config/wezterm/wezterm.lua`
   by `winsmooth`/`install.ps1`. `Alt+Enter` launches the terminal (WezTerm if installed, else
   Windows Terminal). Its config is Lua, so it does more than the static overlay:
-  - **Status bar** — the right side of the tab bar shows the active workspace in the theme accent,
-    then the current project (cwd basename), git branch, and battery as muted pills, so it tracks
-    `theme`.
+  - **Status bar** — the right side of the tab bar shows the parent and current folder, with the
+    current folder in the theme accent, then the git branch and battery in quiet text, so it
+    tracks `theme`.
   - **Project switcher** — `ctrl+shift+p` fuzzy-picks a directory under `C:\Workspace\Projects`
     (plus any `projects.local.json` group roots) and opens/switches to a per-project **workspace**;
     `ctrl+shift+s` fuzzy-switches between already-open workspaces.
