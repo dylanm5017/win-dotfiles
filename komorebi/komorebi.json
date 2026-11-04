@@ -176,9 +176,9 @@
   "border_style": "Rounded",
   "theme": {
     "palette": "Base16",
-    "name": "RosePine",
+    "name": "GruvboxDarkMedium",
     "unfocused_border": "Base03",
-    "bar_accent": "Base0E"
+    "bar_accent": "Base09"
   },
   "stackbar": {
     "mode": "OnStack",

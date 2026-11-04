@@ -26,8 +26,8 @@
   },
   "theme": {
     "palette": "Base16",
-    "name": "RosePine",
-    "accent": "Base0E"
+    "name": "GruvboxDarkMedium",
+    "accent": "Base09"
   },
   "left_widgets": [
     {

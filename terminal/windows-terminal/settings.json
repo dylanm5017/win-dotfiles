@@ -245,7 +245,7 @@
 
     "profiles": {
         "defaults": {
-            "colorScheme": "Rose Pine",
+            "colorScheme": "Gruvbox Dark",
             "cursorShape": "filledBox",
             "useAcrylic": true,
             "opacity": 95,
