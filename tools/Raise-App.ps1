@@ -119,6 +119,76 @@ namespace WinDotfiles
 '@
 }
 
+if (-not ('WinDotfiles.WindowScan' -as [type])) {
+    # A separate type rather than more members on RaiseNative: whkd's long-lived session already
+    # holds a compiled RaiseNative, and a type cannot be redefined in a session.
+    Add-Type -TypeDefinition @'
+using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System.Text;
+
+namespace WinDotfiles
+{
+    public class TileableWindow
+    {
+        public long Hwnd;
+        public uint ProcessId;
+        public string Title;
+    }
+
+    public static class WindowScan
+    {
+        [DllImport("user32.dll")] private static extern bool EnumWindows(EnumWindowsProc callback, IntPtr lParam);
+        [DllImport("user32.dll")] private static extern bool IsWindowVisible(IntPtr hWnd);
+        [DllImport("user32.dll")] private static extern IntPtr GetWindow(IntPtr hWnd, uint cmd);
+        [DllImport("user32.dll")] private static extern int GetWindowTextLength(IntPtr hWnd);
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern int GetWindowText(IntPtr hWnd, StringBuilder text, int maxCount);
+        [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
+        [DllImport("user32.dll", EntryPoint = "GetWindowLongPtrW")] private static extern IntPtr GetWindowLongPtr(IntPtr hWnd, int index);
+        [DllImport("dwmapi.dll")] private static extern int DwmGetWindowAttribute(IntPtr hWnd, int attribute, out int value, int size);
+
+        private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+
+        private const uint GW_OWNER = 4;
+        private const int GWL_STYLE = -16;
+        private const int GWL_EXSTYLE = -20;
+        private const long WS_CAPTION = 0x00C00000;
+        private const long WS_THICKFRAME = 0x00040000;
+        private const long WS_EX_TOOLWINDOW = 0x00000080;
+        private const int DWMWA_CLOAKED = 14;
+
+        // Visible, unowned, titled, resizable top-level windows: the shape komorebi tiles. Used to
+        // find app windows komorebi never picked up (e.g. shown before it started) so they can be
+        // handed to it; notification toasts and call popups fail the caption/frame/toolwindow test.
+        public static TileableWindow[] ListTileableWindows()
+        {
+            var found = new List<TileableWindow>();
+            EnumWindows((hWnd, lParam) =>
+            {
+                if (!IsWindowVisible(hWnd) || GetWindow(hWnd, GW_OWNER) != IntPtr.Zero) { return true; }
+                int length = GetWindowTextLength(hWnd);
+                if (length == 0) { return true; }
+                long style = GetWindowLongPtr(hWnd, GWL_STYLE).ToInt64();
+                long exStyle = GetWindowLongPtr(hWnd, GWL_EXSTYLE).ToInt64();
+                if ((style & WS_CAPTION) != WS_CAPTION || (style & WS_THICKFRAME) == 0) { return true; }
+                if ((exStyle & WS_EX_TOOLWINDOW) != 0) { return true; }
+                int cloaked;
+                if (DwmGetWindowAttribute(hWnd, DWMWA_CLOAKED, out cloaked, 4) == 0 && cloaked != 0) { return true; }
+                uint pid;
+                GetWindowThreadProcessId(hWnd, out pid);
+                var title = new StringBuilder(length + 1);
+                GetWindowText(hWnd, title, title.Capacity);
+                found.Add(new TileableWindow { Hwnd = hWnd.ToInt64(), ProcessId = pid, Title = title.ToString() });
+                return true;
+            }, IntPtr.Zero);
+            return found.ToArray();
+        }
+    }
+}
+'@
+}
+
 function ConvertTo-StringList {
     # @($null) is a one-element array holding $null, not an empty one, so an unbound [string[]]
     # parameter still reports Count 1 and quietly defeats a `.Count -eq 0` fallback test.
@@ -291,6 +361,38 @@ function Get-ProcessWindows {
     $windows
 }
 
+function Get-UnmanagedWindows {
+    # Windows of the matched exes that look tileable but are absent from komorebi's state.
+    param($Managed, [string[]]$ExeNames, [string]$TitlePattern)
+
+    $known = @{}
+    foreach ($window in @($Managed)) { $known[$window.HwndValue] = $true }
+
+    $exeByPid = @{}
+    $strays = New-Object System.Collections.ArrayList
+
+    foreach ($window in [WinDotfiles.WindowScan]::ListTileableWindows()) {
+        if ($known.ContainsKey($window.Hwnd)) { continue }
+        if ($TitlePattern -and $window.Title -notmatch $TitlePattern) { continue }
+
+        $processId = $window.ProcessId
+        if (-not $exeByPid.ContainsKey($processId)) {
+            $process = Get-Process -Id $processId -ErrorAction SilentlyContinue
+            $exeByPid[$processId] = if ($process) { "$($process.ProcessName).exe" } else { '' }
+        }
+        if ($ExeNames -notcontains $exeByPid[$processId]) { continue }
+
+        [void]$strays.Add([pscustomobject]@{
+            Hwnd      = [IntPtr]$window.Hwnd
+            HwndValue = $window.Hwnd
+            Exe       = $exeByPid[$processId]
+            Title     = $window.Title
+        })
+    }
+
+    $strays
+}
+
 function Start-AppCandidate {
     param([string[]]$Candidates)
 
@@ -388,6 +490,19 @@ $hits = @($candidates | Where-Object {
     }
     $exeHit -and (-not $matchTitle -or $window.Title -match $matchTitle)
 } | Sort-Object Monitor, Workspace, Container, StackIndex, HwndValue)
+
+# A window komorebi missed (typically one an app showed before komorebi started) is invisible to
+# the state-based matching above, so it would never be raised or tiled. Adopt it instead: bring it
+# forward and have komorebi manage the now-focused window. The next press cycles as normal.
+if ($state) {
+    $stray = @(Get-UnmanagedWindows -Managed $candidates -ExeNames $matchExe -TitlePattern $matchTitle |
+        Sort-Object HwndValue) | Select-Object -First 1
+    if ($stray -and [WinDotfiles.RaiseNative]::Activate($stray.Hwnd)) {
+        & komorebic manage 2>$null | Out-Null
+        Write-Verbose "Adopted unmanaged $label window $($stray.HwndValue) '$($stray.Title)' into komorebi."
+        return
+    }
+}
 
 if ($hits.Count -eq 0) {
     if ($NoLaunch) {
