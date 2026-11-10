@@ -3,8 +3,8 @@
   "app_specific_configuration_path": "$Env:USERPROFILE/applications.json",
   "global_work_area_offset": { "left": 0, "top": 42, "right": 0, "bottom": 42 },
   "display_index_preferences": {
-    "0": "AUS24B1-5&f1920c6&0&UID4355",
-    "1": "ACR02FA-5&f1920c6&0&UID4352"
+    "0": "AOCB487-5&f1920c6&0&UID4353",
+    "1": "AUS24B1-5&f1920c6&0&UID4355"
   },
   "float_rule_placement": "Center",
   "floating_applications": [
@@ -374,9 +374,12 @@
       "workspaces": [
         {
           "name": "COMMS",
-          "layout": "Columns",
+          "layout": "VerticalStack",
+          "layout_options": {
+            "column_ratios": [0.6]
+          },
           "window_container_behaviour_rules": {
-            "3": "Append"
+            "4": "Append"
           },
           "workspace_rules": [
             {
@@ -417,7 +420,7 @@
           "name": "MEDIA",
           "layout": "Columns",
           "window_container_behaviour_rules": {
-            "2": "Append"
+            "3": "Append"
           },
           "workspace_rules": [
             {
@@ -434,9 +437,12 @@
         },
         {
           "name": "MAIL",
-          "layout": "Columns",
+          "layout": "VerticalStack",
+          "layout_options": {
+            "column_ratios": [0.6]
+          },
           "window_container_behaviour_rules": {
-            "2": "Append"
+            "3": "Append"
           },
           "initial_workspace_rules": [
             {
@@ -453,9 +459,12 @@
         },
         {
           "name": "OFFICE",
-          "layout": "Columns",
+          "layout": "VerticalStack",
+          "layout_options": {
+            "column_ratios": [0.6]
+          },
           "window_container_behaviour_rules": {
-            "2": "Append"
+            "3": "Append"
           },
           "initial_workspace_rules": [
             {
