@@ -3,8 +3,8 @@
   "app_specific_configuration_path": "$Env:USERPROFILE/applications.json",
   "global_work_area_offset": { "left": 0, "top": 42, "right": 0, "bottom": 42 },
   "display_index_preferences": {
-    "0": "SAM0F9C-5&f1920c6&0&UID4355",
-    "1": "AUS24B1-5&f1920c6&0&UID4353"
+    "0": "AUS24B1-5&f1920c6&0&UID4355",
+    "1": "ACR02FA-5&f1920c6&0&UID4352"
   },
   "float_rule_placement": "Center",
   "floating_applications": [
@@ -194,12 +194,12 @@
       "workspaces": [
         {
           "name": "DEV",
-          "layout": "UltrawideVerticalStack",
+          "layout": "VerticalStack",
           "layout_options": {
-            "column_ratios": [0.4, 0.3]
+            "column_ratios": [0.55]
           },
           "window_container_behaviour_rules": {
-            "5": "Append"
+            "3": "Append"
           },
           "initial_workspace_rules": [
             {
@@ -226,19 +226,19 @@
         },
         {
           "name": "CODE",
-          "layout": "UltrawideVerticalStack",
+          "layout": "VerticalStack",
           "layout_options": {
-            "column_ratios": [0.4, 0.3]
+            "column_ratios": [0.55]
           },
           "window_container_behaviour_rules": {
-            "5": "Append"
+            "3": "Append"
           }
         },
         {
           "name": "AGENT",
           "layout": "Columns",
           "window_container_behaviour_rules": {
-            "4": "Append"
+            "3": "Append"
           },
           "initial_workspace_rules": [
             {
@@ -250,12 +250,12 @@
         },
         {
           "name": "DEBUG",
-          "layout": "UltrawideVerticalStack",
+          "layout": "VerticalStack",
           "layout_options": {
-            "column_ratios": [0.4, 0.3]
+            "column_ratios": [0.55]
           },
           "window_container_behaviour_rules": {
-            "5": "Append"
+            "3": "Append"
           },
           "initial_workspace_rules": [
             {
@@ -304,7 +304,7 @@
           "name": "BROWSER",
           "layout": "Columns",
           "window_container_behaviour_rules": {
-            "4": "Append"
+            "2": "Append"
           },
           "initial_workspace_rules": [
             {
@@ -334,7 +334,7 @@
           "layout": "Scrolling",
           "layout_options": {
             "scrolling": {
-              "columns": 4,
+              "columns": 2,
               "center_focused_column": true
             }
           },
@@ -374,7 +374,7 @@
       "workspaces": [
         {
           "name": "COMMS",
-          "layout": "Rows",
+          "layout": "Columns",
           "window_container_behaviour_rules": {
             "3": "Append"
           },
@@ -415,7 +415,7 @@
         },
         {
           "name": "MEDIA",
-          "layout": "HorizontalStack",
+          "layout": "Columns",
           "window_container_behaviour_rules": {
             "2": "Append"
           },
@@ -434,7 +434,7 @@
         },
         {
           "name": "MAIL",
-          "layout": "HorizontalStack",
+          "layout": "Columns",
           "window_container_behaviour_rules": {
             "2": "Append"
           },
@@ -453,7 +453,7 @@
         },
         {
           "name": "OFFICE",
-          "layout": "Rows",
+          "layout": "Columns",
           "window_container_behaviour_rules": {
             "2": "Append"
           },
