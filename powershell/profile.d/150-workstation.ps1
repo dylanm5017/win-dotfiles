@@ -1959,6 +1959,8 @@ function Set-WinWorkstationPowerPlan {
     powercfg /setacvalueindex SCHEME_CURRENT $usbSub $usbSetting 0 | Out-Null
     powercfg /setacvalueindex SCHEME_CURRENT $procSub $minState 100 | Out-Null
     powercfg /setacvalueindex SCHEME_CURRENT $procSub $coreParkMin 100 | Out-Null
+    # OLED primary: blank idle displays after 5 minutes to limit burn-in.
+    powercfg /setacvalueindex SCHEME_CURRENT SUB_VIDEO VIDEOIDLE 300 | Out-Null
     powercfg /setactive SCHEME_CURRENT | Out-Null
 }
 

@@ -171,7 +171,7 @@
   "transparency": false,
   "transparency_alpha": 220,
   "border": true,
-  "border_width": 3,
+  "border_width": 2,
   "border_offset": -1,
   "border_style": "Rounded",
   "theme": {

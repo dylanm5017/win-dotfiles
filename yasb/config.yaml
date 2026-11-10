@@ -40,7 +40,8 @@ bars:
     animation: { enabled: true, type: "slide", duration: 320 }
     # No AppBar: komorebi reserves the strip via global_work_area_offset (komorebi.json),
     # so tiled windows never sit under the bar. Two reservations would double-stack.
-    window_flags: { always_on_top: true, windows_app_bar: false }
+    # auto_hide: this bar sits on the OLED; a static strip invites burn-in. Hover the top edge to reveal.
+    window_flags: { always_on_top: true, windows_app_bar: false, auto_hide: true }
     dimensions: { width: "100%", height: 38 }
     padding: { top: 6, left: 8, bottom: 0, right: 8 }
     widgets:
