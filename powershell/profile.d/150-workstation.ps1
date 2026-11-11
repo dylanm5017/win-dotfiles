@@ -27,6 +27,9 @@ $WinWorkstationApplyFlowLauncherScript = Join-Path $WinDotfilesRoot 'tools\Apply
 $WinWorkstationApplyNileSoftShellScript = Join-Path $WinDotfilesRoot 'tools\Apply-NileSoftShell.ps1'
 $WinWorkstationActiveThemePath = Join-Path $WinDotfilesRoot 'themes\active.txt'
 $WinWorkstationWallpaperRoot = Join-Path $WinDotfilesRoot 'wallpapers'
+# OLED monitors get a pure black wallpaper (pixels off) instead of the theme image, so gaps never wear the panel.
+$WinWorkstationOledMonitorPattern = 'DISPLAY#AOC'
+$WinWorkstationOledWallpaper = Join-Path $WinWorkstationWallpaperRoot 'oled-black.png'
 $WinWorkstationRunRegistryPath = 'Registry::HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run'
 $WinWorkstationDittoRegistryPath = 'Registry::HKEY_CURRENT_USER\Software\Ditto'
 $WinWorkstationQuickLookPath = Join-Path $env:LOCALAPPDATA 'Programs\QuickLook\QuickLook.exe'
@@ -1836,6 +1839,50 @@ function Add-WinWorkstationDefenderExclusions {
     }
 }
 
+function Set-WinWorkstationOledWallpaper {
+    if (-not (Test-Path -LiteralPath $WinWorkstationOledWallpaper -PathType Leaf)) {
+        Write-Warning "OLED wallpaper not found ($WinWorkstationOledWallpaper); skipped."
+        return
+    }
+
+    if (-not ([System.Management.Automation.PSTypeName]'WinDotfiles.DesktopWallpaper').Type) {
+        Add-Type -TypeDefinition @'
+using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+namespace WinDotfiles {
+    [StructLayout(LayoutKind.Sequential)] struct WallpaperRect { public int Left, Top, Right, Bottom; }
+    [ComImport, Guid("B92B56A9-8B55-4E14-9A89-0199BBB6F93B"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    interface IDesktopWallpaper {
+        void SetWallpaper([MarshalAs(UnmanagedType.LPWStr)] string monitorID, [MarshalAs(UnmanagedType.LPWStr)] string wallpaper);
+        [return: MarshalAs(UnmanagedType.LPWStr)] string GetWallpaper([MarshalAs(UnmanagedType.LPWStr)] string monitorID);
+        [return: MarshalAs(UnmanagedType.LPWStr)] string GetMonitorDevicePathAt(uint monitorIndex);
+        uint GetMonitorDevicePathCount();
+        WallpaperRect GetMonitorRECT([MarshalAs(UnmanagedType.LPWStr)] string monitorID);
+    }
+    public static class DesktopWallpaper {
+        public static List<string> SetForMatchingMonitors(string pattern, string wallpaper) {
+            var dw = (IDesktopWallpaper)Activator.CreateInstance(Type.GetTypeFromCLSID(new Guid("C2CF3110-460E-4fc1-B9D0-8A1C0C9CC4BD")));
+            var matched = new List<string>();
+            for (uint i = 0; i < dw.GetMonitorDevicePathCount(); i++) {
+                var id = dw.GetMonitorDevicePathAt(i);
+                if (id.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) < 0) continue;
+                dw.SetWallpaper(id, wallpaper);
+                matched.Add(id);
+            }
+            return matched;
+        }
+    }
+}
+'@
+    }
+
+    $matched = [WinDotfiles.DesktopWallpaper]::SetForMatchingMonitors($WinWorkstationOledMonitorPattern, $WinWorkstationOledWallpaper)
+    if ($matched.Count -eq 0) {
+        Write-Verbose "No monitor matched '$WinWorkstationOledMonitorPattern'; OLED wallpaper not applied."
+    }
+}
+
 function Initialize-WinWorkstationNativeMethods {
     if (([System.Management.Automation.PSTypeName]'WinDotfiles.NativeMethods').Type) {
         return
@@ -2186,6 +2233,9 @@ function Set-WinWorkstationDesktopTheme {
         # Apply live: SPI_SETDESKWALLPAPER (0x0014) with SPIF_UPDATEINIFILE|SPIF_SENDCHANGE (0x03).
         Initialize-WinWorkstationNativeMethods
         [void][WinDotfiles.NativeMethods]::SystemParametersInfoWallpaper(0x0014, 0, $wallpaper, 0x03)
+
+        # SPI sets every monitor; re-apply the per-monitor black wallpaper on the OLED afterwards.
+        Set-WinWorkstationOledWallpaper
     }
     else {
         Write-Warning "Wallpaper for '$ThemeName' not found ($wallpaper); run tools/Build-Wallpapers.ps1 to generate it."
