@@ -962,9 +962,21 @@ function Invoke-WinWorkstationCheck {
     [void]$results.Add((New-WinWorkstationCheckResult -Category 'Window manager' -Name 'komorebi/whkd' -Status $komorebiStatus -Detail "komorebic=$(if ($komorebi) { $komorebi.Source } else { 'not found' }); running=$($komorebiProcesses.ProcessName -join ', ')" -Recommendation 'Run winsmooth -Apply to link configs/autostart, then wmstart.'))
 
     $yasb = Get-Command yasbc -ErrorAction SilentlyContinue
-    $yasbRunning = [bool](Get-Process -Name yasb -ErrorAction SilentlyContinue)
+    $yasbProcesses = @(Get-Process -Name yasb -ErrorAction SilentlyContinue)
+    # A broken frozen runtime leaves yasb.exe alive behind a cx_Freeze error dialog, so it still counts as a process.
+    $yasbFreezeError = [bool]($yasbProcesses | Where-Object { $_.MainWindowTitle -like 'cx_Freeze*' })
+    $yasbRunning = $yasbProcesses.Count -gt 0 -and -not $yasbFreezeError
     $yasbStatus = if ($yasbRunning) { 'OK' } elseif ($yasb) { 'Warn' } else { 'Missing' }
-    [void]$results.Add((New-WinWorkstationCheckResult -Category 'Status bar' -Name 'Yasb' -Status $yasbStatus -Detail "yasbc=$(if ($yasb) { $yasb.Source } else { 'not found' }); running=$yasbRunning" -Recommendation 'Install AmN.yasb (winget), then winsmooth -Apply links config + enables autostart; control with yasbc start/stop/reload.'))
+    [void]$results.Add((New-WinWorkstationCheckResult -Category 'Status bar' -Name 'Yasb' -Status $yasbStatus -Detail "yasbc=$(if ($yasb) { $yasb.Source } else { 'not found' }); running=$yasbRunning; freezeErrorDialog=$yasbFreezeError" -Recommendation 'Install AmN.yasb (winget), then winsmooth -Apply links config + enables autostart; control with yasbc start/stop/reload.'))
+
+    $yasbLib = Join-Path $env:ProgramFiles 'YASB\lib'
+    if (Test-Path -LiteralPath $yasbLib) {
+        # library.dat names the stdlib archive (library.zip); if it vanishes yasb dies with "Cannot import traceback module".
+        $yasbArchiveName = try { ([IO.File]::ReadAllText((Join-Path $yasbLib 'library.dat'))).Trim() } catch { 'library.zip' }
+        if (-not $yasbArchiveName) { $yasbArchiveName = 'library.zip' }
+        $yasbArchiveOK = Test-Path -LiteralPath (Join-Path $yasbLib $yasbArchiveName)
+        [void]$results.Add((New-WinWorkstationCheckResult -Category 'Status bar' -Name 'Yasb install' -Status $(if ($yasbArchiveOK -and -not $yasbFreezeError) { 'OK' } else { 'Error' }) -Detail "lib\$yasbArchiveName present=$yasbArchiveOK; freezeErrorDialog=$yasbFreezeError" -Recommendation $(if ($yasbArchiveOK -and -not $yasbFreezeError) { 'Frozen runtime intact.' } else { 'Install is damaged (repair/winget --force will not restore it): stop yasb, winget download AmN.yasb, msiexec /x the product, then msiexec /i the downloaded MSI.' })))
+    }
 
     $windhawk = Get-Command windhawk -ErrorAction SilentlyContinue
     $windhawkInstalled = $windhawk -or (Test-Path -LiteralPath (Join-Path $env:ProgramData 'Windhawk'))
