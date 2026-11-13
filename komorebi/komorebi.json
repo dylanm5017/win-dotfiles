@@ -176,9 +176,9 @@
   "border_style": "Rounded",
   "theme": {
     "palette": "Base16",
-    "name": "GruvboxDarkMedium",
+    "name": "Dracula",
     "unfocused_border": "Base03",
-    "bar_accent": "Base09"
+    "bar_accent": "Base0E"
   },
   "stackbar": {
     "mode": "OnStack",

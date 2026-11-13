@@ -17,7 +17,7 @@ theme
 
 	background
 	{
-		color = #282828
+		color = #282A36
 		opacity = 100
 	}
 
@@ -29,16 +29,16 @@ theme
 
 		text
 		{
-			normal = #fe8019
-			select = #fe8019
-			normal-disabled = #a89984
-			select-disabled = #fe8019
+			normal = #BD93F9
+			select = #BD93F9
+			normal-disabled = #6272A4
+			select-disabled = #BD93F9
 		}
 
 		back
 		{
-			select = #504945
-			select-disabled = #504945
+			select = #6272A4
+			select-disabled = #6272A4
 		}
 	}
 
@@ -54,7 +54,7 @@ theme
 	{
 		enabled = false
 		size = 1
-		color = #fe8019
+		color = #BD93F9
 		opacity = 100
 		radius = 0
 	}
@@ -70,21 +70,21 @@ theme
 	separator
 	{
 		size = 1
-		color = #282828
+		color = #282A36
 	}
 
 	symbol
 	{
-		normal = #fe8019
-		select = #fe8019
-		normal-disabled = #fe80197a
-		select-disabled = #fe80197a
+		normal = #BD93F9
+		select = #BD93F9
+		normal-disabled = #BD93F97a
+		select-disabled = #BD93F97a
 	}
 
 	image
 	{
 		enabled = false
-		color = [#fe8019, #fe8019, #fe8019]
+		color = [#BD93F9, #BD93F9, #BD93F9]
 	}
 }
 // win-dotfiles:theme:end

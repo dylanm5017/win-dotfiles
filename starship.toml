@@ -7,7 +7,7 @@ command_timeout = 500
 scan_timeout = 10
 
 # Active palette — rewritten by `theme set <name>` (themes/<name>.psd1 StarshipPalette).
-palette = "gruvbox"
+palette = "dracula"
 
 # An explicit list, so a module only appears here once it has been restyled below.
 format = """

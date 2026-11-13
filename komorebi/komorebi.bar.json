@@ -26,8 +26,8 @@
   },
   "theme": {
     "palette": "Base16",
-    "name": "GruvboxDarkMedium",
-    "accent": "Base09"
+    "name": "Dracula",
+    "accent": "Base0E"
   },
   "left_widgets": [
     {

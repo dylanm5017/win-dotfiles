@@ -14,18 +14,18 @@
 
 /* win-dotfiles:theme:start */
 :root {
-    --bg: #282828;
-    --surface: #3c3836;
-    --surface-alt: #504945;
-    --text: #ebdbb2;
-    --subtext: #a89984;
-    --accent: #fe8019;
-    --accent-alt: #8ec07c;
-    --ok: #b8bb26;
-    --warn: #fabd2f;
-    --err: #fb4934;
-    --island: rgba(40, 40, 40, 0.85);
-    --border: rgba(254, 128, 25, 0.35);
+    --bg: #282A36;
+    --surface: #44475A;
+    --surface-alt: #6272A4;
+    --text: #F8F8F2;
+    --subtext: #6272A4;
+    --accent: #BD93F9;
+    --accent-alt: #8BE9FD;
+    --ok: #50FA7B;
+    --warn: #F1FA8C;
+    --err: #FF5555;
+    --island: rgba(40, 42, 54, 0.80);
+    --border: rgba(189, 147, 249, 0.35);
 }
 /* win-dotfiles:theme:end */
 
