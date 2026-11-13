@@ -25,6 +25,8 @@ $WinWorkstationVSCodeSettingsPath = Join-Path $env:APPDATA 'Code\User\settings.j
 $WinWorkstationApplySpicetifyScript = Join-Path $WinDotfilesRoot 'tools\Apply-Spicetify.ps1'
 $WinWorkstationApplyFlowLauncherScript = Join-Path $WinDotfilesRoot 'tools\Apply-FlowLauncher.ps1'
 $WinWorkstationApplyNileSoftShellScript = Join-Path $WinDotfilesRoot 'tools\Apply-NileSoftShell.ps1'
+$WinWorkstationHeadphoneVolumeScript = Join-Path $WinDotfilesRoot 'tools\Reset-HeadphoneVolume.ps1'
+$WinWorkstationHeadphoneDeviceMatch = 'WH-1000XM6'
 $WinWorkstationActiveThemePath = Join-Path $WinDotfilesRoot 'themes\active.txt'
 $WinWorkstationWallpaperRoot = Join-Path $WinDotfilesRoot 'wallpapers'
 # OLED monitors get a pure black wallpaper (pixels off) instead of the theme image, so gaps never wear the panel.
@@ -1616,6 +1618,19 @@ function Set-WinWorkstationFlowLauncherSettings {
     & $WinWorkstationApplyFlowLauncherScript
 }
 
+function Set-WinWorkstationHeadphoneVolumeTask {
+    param([Parameter(Mandatory)]$Manifest)
+
+    # The XM6 shares a pairing key with the Arch dual boot, and Bluetooth absolute volume carries
+    # Arch's lower level back to Windows. Register the logon task that resets it to 100%.
+    # $Manifest is unused (a scheduled task, undone with Unregister-ScheduledTask), kept for signature consistency.
+    if (-not (Get-PnpDevice -FriendlyName "*$WinWorkstationHeadphoneDeviceMatch*" -ErrorAction SilentlyContinue)) {
+        Write-Host "$WinWorkstationHeadphoneDeviceMatch not paired; skipping headphone volume logon task." -ForegroundColor DarkGray
+        return
+    }
+    & $WinWorkstationHeadphoneVolumeScript -DeviceMatch $WinWorkstationHeadphoneDeviceMatch -Register
+}
+
 function Set-WinWorkstationNileSoftShellSettings {
     param([Parameter(Mandatory)]$Manifest)
 
@@ -2296,7 +2311,8 @@ function Invoke-WinWorkstationSmooth {
         [switch]$SkipStartup,
         [switch]$SkipSearchIndexing,
         [switch]$SkipResponsiveness,
-        [switch]$SkipShellDefaults
+        [switch]$SkipShellDefaults,
+        [switch]$SkipHeadphoneVolume
     )
 
     if ($RestoreLast) {
@@ -2316,6 +2332,7 @@ function Invoke-WinWorkstationSmooth {
         'Theme Spotify via Spicetify from the active palette (no-op if Spicetify is absent)'
         'Theme Flow Launcher, bind it to Alt+Space, and enable its autostart (no-op if Flow is absent)'
         'Import committed Windhawk mods (windhawk/state) when present'
+        'Register the logon task that resets the WH-1000XM6 volume to 100% (Arch dual-boot absolute volume drift)'
         'Apply the active desktop theme: window accent color and the generated wallpaper'
         'Trim heavy login autostarts (gaming launchers, Docker, Teams/work-comms) durably, and clear the Windows Run-key startup delay so Flow is ready sooner'
         'Mark dev roots as not content indexed'
@@ -2394,6 +2411,10 @@ function Invoke-WinWorkstationSmooth {
 
         if (-not $SkipWindhawk) {
             Invoke-WinWorkstationStep -Name 'Windhawk' -Failures $stepFailures -Action { Set-WinWorkstationWindhawkSettings -Manifest $manifest }
+        }
+
+        if (-not $SkipHeadphoneVolume) {
+            Invoke-WinWorkstationStep -Name 'Headphone volume task' -Failures $stepFailures -Action { Set-WinWorkstationHeadphoneVolumeTask -Manifest $manifest }
         }
 
         if (-not $SkipDesktopTheme) {
