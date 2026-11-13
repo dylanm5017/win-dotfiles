@@ -1,7 +1,7 @@
 {
-  "exportedUtc": "2026-06-30T13:51:00.2727544Z",
+  "exportedUtc": "2026-11-13T12:41:15.7622844Z",
   "includeCompiled": false,
-  "modCount": 8,
+  "modCount": 13,
   "mods": [
     {
       "id": "center-titlebar",
@@ -24,9 +24,14 @@
       "version": "1.0.1"
     },
     {
+      "id": "taskbar-dock-animation",
+      "disabled": 0,
+      "version": "1.9.2"
+    },
+    {
       "id": "win11-accent-border",
       "disabled": 0,
-      "version": "1.0.4"
+      "version": "1.0.5"
     },
     {
       "id": "win11-custom-title-bar-colours",
@@ -39,9 +44,29 @@
       "version": "1.0.1"
     },
     {
+      "id": "windows-11-file-explorer-styler",
+      "disabled": 1,
+      "version": "1.7.2"
+    },
+    {
       "id": "windows-11-notification-center-styler",
       "disabled": 0,
-      "version": "1.5"
+      "version": "1.8"
+    },
+    {
+      "id": "windows-11-start-menu-styler",
+      "disabled": 1,
+      "version": "1.8"
+    },
+    {
+      "id": "windows-11-taskbar-styler",
+      "disabled": 0,
+      "version": "1.11.1"
+    },
+    {
+      "id": "windows-animations",
+      "disabled": 0,
+      "version": "1.3.7"
     }
   ]
 }

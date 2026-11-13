@@ -62,9 +62,19 @@ the accent-riding mods if you want zero maintenance across theme switches.
 | **Center Titlebar** | `center-titlebar` | Centers title-bar text — subtle polish that matches the centered Yasb clock. | Install as-is. |
 | **Window Border Customizer** *(optional)* | `window-border-customizer` | Replaces DWM borders with custom ARGB translucent borders. Use only if `win11-accent-border` isn't enough. | Thin border; translucent alpha to match the Yasb island feel. Manual color. |
 | **Disable rounded corners** *(optional)* | `disable-rounded-corners` | Squares off Win11 corners for a sharper tiling look. Taste-dependent. | Off by default — enable only if you prefer hard corners. |
+| **Windows Animations** | `windows-animations` | Adds animations to windows (open/close/minimize) on top of the stock DWM behavior. | Installed and enabled. Settings captured in `windhawk/state/`. |
 
-> Note: the desktop already auto-hides the taskbar (Yasb is primary), so taskbar-styling mods
-> (`windows-11-taskbar-styler`, etc.) are intentionally **not** used here.
+## Taskbar, Start + notifications
+
+Yasb is the primary bar and the taskbar stays auto-hidden, but it still appears on hover, so these
+mods clean up the stock taskbar's styling for those times.
+
+| Mod | id | Why | Recommended |
+|-----|----|-----|-------------|
+| **Windows 11 Taskbar Styler** | `windows-11-taskbar-styler` | Cleans up the default taskbar's styling. | Installed and enabled. Settings captured in `windhawk/state/`. |
+| **Taskbar Dock Animation** | `taskbar-dock-animation` | Dock-style icon animation on the taskbar, part of the same cleanup. | Installed and enabled. |
+| **Windows 11 Notification Center Styler** | `windows-11-notification-center-styler` | Styles the notification center/quick settings to match the dark desktop. | Installed and enabled. |
+| **Windows 11 Start Menu Styler** *(optional)* | `windows-11-start-menu-styler` | Styles the Start menu. | Installed but **disabled** — enable from the Windhawk UI when wanted. |
 
 ## Explorer + context menus
 
@@ -73,14 +83,14 @@ the accent-riding mods if you want zero maintenance across theme switches.
 | **Disable Immersive Context Menus** | `disable-immersive-context-menus` | Restores the fast classic (Win10-style) right-click menu in File Explorer — no "Show more options" second hop. | Install as-is. |
 | **Dark mode context menus** | `dark-menus` | Forces dark mode on all win32 menus, so the classic menus above match the dark desktop. | Install as-is. **On `latte`:** disable it — it'll force-darken menus against a light desktop otherwise. |
 | **Remove Context Menu Items** *(optional)* | `remove-context-menu-items` | Trims unwanted entries from file context menus (configurable). | Remove only noise you don't use (e.g. vendor "Share"/cloud entries). |
-| **Windows 11 File Explorer Styler** *(optional)* | `windows-11-file-explorer-styler` | Theme File Explorer chrome via community themes or your own rules. Most involved — opt in if you want Explorer to match the palette. | Start from a dark community theme; adjust accents to the active theme `Accent`. |
+| **Windows 11 File Explorer Styler** *(optional)* | `windows-11-file-explorer-styler` | Theme File Explorer chrome via community themes or your own rules. Most involved — opt in if you want Explorer to match the palette. | Installed but **disabled**. When enabling, start from a dark community theme; adjust accents to the active theme `Accent`. |
 | **Classic Explorer Treeview** *(optional)* | `classic-explorer-treeview` | Makes the Explorer folder treeview look more classic. | Taste-dependent. |
 
 ---
 
 ## Notes
 
-- Settings are not version-controlled by design (Windhawk has no official export). This list is the
-  source of truth; re-apply from the UI after a clean install or a major Windows feature update.
-- A scripted registry import (`HKLM\SOFTWARE\Windhawk` + `%ProgramData%\Windhawk`) was considered and
-  declined — it's brittle when mods change their settings schema across updates.
+- Per-mod settings are captured in `windhawk/state/` by `Export-Windhawk.ps1` (see above). Re-run it
+  after installing, updating or retuning mods, then commit the diff; this list explains *why* each mod is there.
+- The registry import is best-effort: if a mod changes its settings schema across an update, re-apply
+  that mod's settings from the UI and re-export.
