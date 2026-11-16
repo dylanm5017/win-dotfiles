@@ -27,6 +27,7 @@ $WinWorkstationApplyFlowLauncherScript = Join-Path $WinDotfilesRoot 'tools\Apply
 $WinWorkstationApplyNileSoftShellScript = Join-Path $WinDotfilesRoot 'tools\Apply-NileSoftShell.ps1'
 $WinWorkstationHeadphoneVolumeScript = Join-Path $WinDotfilesRoot 'tools\Reset-HeadphoneVolume.ps1'
 $WinWorkstationHeadphoneDeviceMatch = 'WH-1000XM6'
+$WinWorkstationSideDockScript = Join-Path $WinDotfilesRoot 'tools\Set-SideDock.ps1'
 $WinWorkstationActiveThemePath = Join-Path $WinDotfilesRoot 'themes\active.txt'
 $WinWorkstationWallpaperRoot = Join-Path $WinDotfilesRoot 'wallpapers'
 # OLED monitors get a pure black wallpaper (pixels off) instead of the theme image, so gaps never wear the panel.
@@ -1631,6 +1632,14 @@ function Set-WinWorkstationHeadphoneVolumeTask {
     & $WinWorkstationHeadphoneVolumeScript -DeviceMatch $WinWorkstationHeadphoneDeviceMatch -Register
 }
 
+function Set-WinWorkstationSideDockTask {
+    param([Parameter(Mandatory)]$Manifest)
+
+    # Docks music, Wave Link and the watch terminal into the ultrawide's reserved strip at logon,
+    # since komorebi autostart doesn't go through wmstart. $Manifest is unused (a scheduled task).
+    & $WinWorkstationSideDockScript -Register
+}
+
 function Set-WinWorkstationNileSoftShellSettings {
     param([Parameter(Mandatory)]$Manifest)
 
@@ -2312,7 +2321,8 @@ function Invoke-WinWorkstationSmooth {
         [switch]$SkipSearchIndexing,
         [switch]$SkipResponsiveness,
         [switch]$SkipShellDefaults,
-        [switch]$SkipHeadphoneVolume
+        [switch]$SkipHeadphoneVolume,
+        [switch]$SkipSideDock
     )
 
     if ($RestoreLast) {
@@ -2417,6 +2427,10 @@ function Invoke-WinWorkstationSmooth {
             Invoke-WinWorkstationStep -Name 'Headphone volume task' -Failures $stepFailures -Action { Set-WinWorkstationHeadphoneVolumeTask -Manifest $manifest }
         }
 
+        if (-not $SkipSideDock) {
+            Invoke-WinWorkstationStep -Name 'Side dock task' -Failures $stepFailures -Action { Set-WinWorkstationSideDockTask -Manifest $manifest }
+        }
+
         if (-not $SkipDesktopTheme) {
             Invoke-WinWorkstationStep -Name 'Desktop theme' -Failures $stepFailures -Action { Set-WinWorkstationDesktopTheme -Manifest $manifest }
         }
@@ -2475,6 +2489,7 @@ function Start-WinWindowManager {
     $env:RUST_BACKTRACE = 'full'
     # No --bar: Yasb is the status bar. Start it alongside komorebi so the rice comes up together.
     komorebic start --whkd --clean-state
+    & (Join-Path $WinDotfilesRoot 'tools\Set-SideDock.ps1') -Launch
     if (Get-Command yasbc -ErrorAction SilentlyContinue) {
         if (Get-Process -Name yasb -ErrorAction SilentlyContinue) {
             yasbc reload --silent 2>$null | Out-Null
@@ -2599,7 +2614,7 @@ function Set-WinWindowManagerDevIntent {
     param()
 
     [void](Invoke-WinWindowManagerCommand -Arguments @('focus-named-workspace', 'DEV'))
-    [void](Invoke-WinWindowManagerCommand -Arguments @('named-workspace-layout', 'DEV', 'ultrawide-vertical-stack'))
+    [void](Invoke-WinWindowManagerCommand -Arguments @('named-workspace-layout', 'DEV', 'vertical-stack'))
     [void](Invoke-WinWindowManagerCommand -Arguments @('named-workspace-padding', 'DEV', '8'))
     [void](Invoke-WinWindowManagerCommand -Arguments @('named-workspace-container-padding', 'DEV', '6'))
     [void](Invoke-WinWindowManagerCommand -Arguments @('retile'))
@@ -2620,10 +2635,10 @@ function Set-WinWindowManagerFocusIntent {
     [CmdletBinding()]
     param()
 
-    # Give the focused window the primary tile rather than going full-screen: a single window on a
-    # 32:9 panel wastes it. Promote + ultrawide main-stack keeps the flanking columns visible.
+    # Give the focused window the primary tile rather than going full-screen, so the rest of the
+    # workspace stays visible beside it.
     [void](Invoke-WinWindowManagerCommand -Arguments @('promote'))
-    [void](Invoke-WinWindowManagerCommand -Arguments @('change-layout', 'ultrawide-vertical-stack'))
+    [void](Invoke-WinWindowManagerCommand -Arguments @('change-layout', 'vertical-stack'))
     [void](Invoke-WinWindowManagerCommand -Arguments @('retile'))
 }
 

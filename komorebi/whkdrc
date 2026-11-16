@@ -22,7 +22,10 @@ win + b                 : & 'C:\Workspace\Projects\win-dotfiles\tools\Raise-App.
 win + c                 : & 'C:\Workspace\Projects\win-dotfiles\tools\Raise-App.ps1' code
 win + t                 : & 'C:\Workspace\Projects\win-dotfiles\tools\Raise-App.ps1' terminal
 win + m                 : & 'C:\Workspace\Projects\win-dotfiles\tools\Raise-App.ps1' teams
-win + y                 : & 'C:\Workspace\Projects\win-dotfiles\tools\Raise-App.ps1' music
+# Music, Wave Link and the watch terminal are untiled (ignore_rules) and live in the ultrawide's
+# reserved left strip, so these dock rather than raise; Raise-App would adopt them into tiling.
+win + y                 : & 'C:\Workspace\Projects\win-dotfiles\tools\Set-SideDock.ps1' -Focus music
+alt + 8                 : & 'C:\Workspace\Projects\win-dotfiles\tools\Set-SideDock.ps1' -Focus watch
 win + e                 : & 'C:\Workspace\Projects\win-dotfiles\tools\Raise-App.ps1' files
 
 alt + q                 : komorebic close
@@ -89,7 +92,7 @@ alt + shift + n         : komorebic change-layout scrolling
 alt + shift + b         : komorebic change-layout bsp
 
 # Workspaces. Named rather than indexed, so one keypress crosses monitors: komorebi focuses the
-# owning monitor first, then the workspace. alt+1-6 land on the ultrawide, alt+7-0 on the ASUS.
+# owning monitor first, then the workspace. alt+1-6 land on the AOC, alt+7/9/0 on the ultrawide (alt+8 focuses the watch terminal).
 alt + 1                 : komorebic focus-named-workspace DEV
 alt + 2                 : komorebic focus-named-workspace CODE
 alt + 3                 : komorebic focus-named-workspace AGENT
@@ -97,7 +100,6 @@ alt + 4                 : komorebic focus-named-workspace DEBUG
 alt + 5                 : komorebic focus-named-workspace BROWSER
 alt + 6                 : komorebic focus-named-workspace MISC
 alt + 7                 : komorebic focus-named-workspace COMMS
-alt + 8                 : komorebic focus-named-workspace MEDIA
 alt + 9                 : komorebic focus-named-workspace MAIL
 alt + 0                 : komorebic focus-named-workspace OFFICE
 
@@ -112,7 +114,6 @@ alt + shift + 4         : komorebic move-to-named-workspace DEBUG
 alt + shift + 5         : komorebic move-to-named-workspace BROWSER
 alt + shift + 6         : komorebic move-to-named-workspace MISC
 alt + shift + 7         : komorebic move-to-named-workspace COMMS
-alt + shift + 8         : komorebic move-to-named-workspace MEDIA
 alt + shift + 9         : komorebic move-to-named-workspace MAIL
 alt + shift + 0         : komorebic move-to-named-workspace OFFICE
 
@@ -125,6 +126,5 @@ ctrl + alt + 4          : komorebic send-to-named-workspace DEBUG
 ctrl + alt + 5          : komorebic send-to-named-workspace BROWSER
 ctrl + alt + 6          : komorebic send-to-named-workspace MISC
 ctrl + alt + 7          : komorebic send-to-named-workspace COMMS
-ctrl + alt + 8          : komorebic send-to-named-workspace MEDIA
 ctrl + alt + 9          : komorebic send-to-named-workspace MAIL
 ctrl + alt + 0          : komorebic send-to-named-workspace OFFICE

@@ -2,8 +2,8 @@
 # komorebi built-in bar). Linked to ~/.config/yasb/config.yaml by winsmooth -Apply.
 #
 # Two asymmetric bars:
-#   - light  -> primary monitor (Samsung ultrawide): ambient glance (workspaces, clock, media).
-#   - rich   -> the other monitor (ASUS 1080p detail screen): full system widgets + tray + power.
+#   - light  -> primary monitor (AOC 1440p OLED, the focus screen): auto-hiding ambient glance.
+#   - rich   -> the other monitor (Samsung ultrawide, side screen): full system widgets + tray + power.
 # Yasb targets them by name-independent screen tokens: ['primary'] vs ['*'] (remaining monitor).
 #
 # Theming is NOT done here: colors live in yasb/styles.css inside a win-dotfiles:theme block
@@ -26,7 +26,7 @@ komorebi:
   reload_command: "komorebic replace-configuration C:\\Workspace\\Projects\\win-dotfiles\\komorebi\\komorebi.json"
 
 bars:
-  # Light, ambient bar on the primary Samsung ultrawide.
+  # Light, ambient bar on the primary AOC OLED.
   # Notifications live here (not the rich bar) because Windows opens the notification
   # center on the primary screen, so the bell sits next to where the panel appears.
   light-bar:
@@ -54,7 +54,7 @@ bars:
       center: ["media"]
       right: ["sound_group", "dev_group"]
 
-  # Rich, detail bar on the ASUS portrait screen (compact labels to fit 1080px).
+  # Rich, detail bar on the Samsung ultrawide side screen.
   rich-bar:
     enabled: true
     screens: ['*']

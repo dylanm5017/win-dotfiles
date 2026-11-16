@@ -2,39 +2,61 @@
 
 - Komorebi config lives in `komorebi/komorebi.json`; whkd keybindings live in `komorebi/whkdrc`.
 - Popup handling keeps common dialogs, PowerToys overlays, browser PiP, and Teams call/notification overlays out of the tiling graph.
-- Depth: focused windows wear a rounded accent border (`border_style: Rounded`, width 3, themed by `theme`) with a smooth easing animation on movement. Transparency is configured but left off — it breaks tiling for layered apps (Firefox, Windows Terminal).
+- Depth: focused windows wear a rounded accent border (`border_style: Rounded`, width 2, themed by `theme`) with a smooth easing animation on movement. Transparency is configured but left off — it breaks tiling for layered apps (Firefox, Windows Terminal).
 
 ## Workspaces
 
-Ten named workspaces, six on the ultrawide and four on the secondary (a 1080x1920 portrait panel to the right of the ultrawide). `Alt+<digit>` is
-**monitor-agnostic**: komorebi focuses the owning monitor first, so one keypress crosses displays and
-there is no separate "switch monitor" step in normal use.
+Nine named workspaces across two monitors. The **AOC** (2560x1440 OLED, Windows primary, straight ahead) is
+the focus screen and holds the six work workspaces. The **Samsung ultrawide** (5120x1440, on an arm to the
+left and slightly behind) is a side screen for things you glance at while they run in the background.
+`Alt+<digit>` is **monitor-agnostic**: komorebi focuses the owning monitor first, so one keypress crosses
+displays and there is no separate "switch monitor" step in normal use.
 
 | Key | Workspace | Monitor | Layout | Visible tiles |
 | --- | --- | --- | --- | --- |
-| `Alt+1` | DEV | ultrawide | ultrawide main-stack | 5 |
-| `Alt+2` | CODE | ultrawide | ultrawide main-stack | 5 |
-| `Alt+3` | AGENT | ultrawide | columns | 4 |
-| `Alt+4` | DEBUG | ultrawide | ultrawide main-stack | 5 |
-| `Alt+5` | BROWSER | ultrawide | columns | 4 |
-| `Alt+6` | MISC | ultrawide | scrolling | 4 at a time |
-| `Alt+7` | COMMS | secondary | rows | 3 |
-| `Alt+8` | MEDIA | secondary | horizontal stack | 2 |
-| `Alt+9` | MAIL | secondary | horizontal stack | 2 |
-| `Alt+0` | OFFICE | secondary | rows | 2 |
+| `Alt+1` | DEV | AOC | vertical stack (0.55 main) | 3 |
+| `Alt+2` | CODE | AOC | vertical stack (0.55 main) | 3 |
+| `Alt+3` | AGENT | AOC | columns | 3 |
+| `Alt+4` | DEBUG | AOC | vertical stack (0.55 main) | 3 |
+| `Alt+5` | BROWSER | AOC | columns | 2 |
+| `Alt+6` | MISC | AOC | scrolling | 2 at a time |
+| `Alt+7` | COMMS | ultrawide | columns | 3 |
+| `Alt+9` | MAIL | ultrawide | right-main stack (0.5 main) | 3 |
+| `Alt+0` | OFFICE | ultrawide | right-main stack (0.5 main) | 3 |
+
+The ultrawide sits to your left, so its right edge is closest to your line of sight. MAIL and OFFICE
+put their main tile on the **right** (`RightMainVerticalStack`) so the window you read is nearest
+the AOC.
+
+**Side dock.** The ultrawide's far-left 2304px is reserved for apps you want up all the time but
+rarely look at. They stay visible on every workspace without being tiled. Furthest out (the hardest
+spot to look at) is a 1280px column with YouTube Music on top (60%) and Elgato Wave Link below.
+Keeping Wave Link open also avoids the "only system audio" fault, where app audio goes silent until
+its window is opened. Next to that, closer to the middle, is a 1024px **watch terminal** for dev
+servers, log tails and long builds: a WezTerm window started with `--class wezterm-watch`.
+
+Three pieces work together: `ignore_rules` keeps komorebi away from these windows (so it never
+hides them on a workspace switch); the ultrawide's `work_area_offset` (`left`/`right` 2304) keeps
+tiles out of the strip; and `tools/Set-SideDock.ps1` puts each window in its slot. A logon task
+(registered by `winsmooth -Apply`) and `wmstart` run it with `-Launch`, which starts any that are missing. `Win+Y` docks and focuses music, and `Alt+8`
+(which used to be MEDIA) docks and focuses the watch terminal. If you change a width, change it in both
+`komorebi.json` and the script's `-MediaWidth`/`-WatchWidth`.
+
+Windows places the ultrawide left of the AOC in the display arrangement too (X=-5120),
+so the cursor crosses on the physical edge. If a driver reset puts it back on the right, drag it
+back in Settings > Display.
 
 - `Alt+Shift+<digit>` moves the focused window there and follows it; `Ctrl+Alt+<digit>` shoves it
   there and stays put — that second one is the "this workspace is getting crowded" gesture.
 - `Alt+` `` ` `` jumps to the last workspace, `Alt+Shift+` `` ` `` moves a window to it.
-- Tile counts are ceilings derived from minimum usable width on a 5120x1440 panel (and minimum
-  usable height on the portrait secondary, which only ever splits top-to-bottom). Past the ceiling
+- Tile counts are ceilings derived from minimum usable width on each panel. Past the ceiling
   komorebi appends into a stack rather than slicing thinner; `Alt+;` unstacks one, `Alt+Shift+;`
   unstacks all, and `Alt+[` / `Alt+]` cycle within a stack.
 - MISC uses the **scrolling** layout instead of a ceiling: a fixed number of columns stays
   visible and the rest scroll off-screen, so an overflow workspace never degenerates into slivers or
   a wall of tabs. `Alt+Shift+N` switches any workspace to it.
-- Monocle is deliberately unbound — one window on a 32:9 panel wastes it. `wmfocus` promotes the
-  focused window to the primary tile instead.
+- Monocle is deliberately unbound. `wmfocus` promotes the focused window to the primary tile
+  instead, so the rest of the workspace stays visible.
 - Positional fallbacks: `Alt+,` / `Alt+.` focus a monitor directly, `Alt+←` / `Alt+→` cycle monitors,
   `Alt+↑` / `Alt+↓` cycle workspaces.
 
@@ -54,14 +76,13 @@ Apps land on the right workspace on their own. There are two rule types and the 
 | AGENT | — | Codex |
 | DEBUG | — | MySQL Workbench, DBeaver, MongoDB Compass, SSMS, Postman, Citrix Workspace, Docker Desktop |
 | BROWSER | — | Firefox, Chrome, Edge, Vivaldi |
-| MISC | Elgato Wave Link | Notion, Notepad++, WinMerge, WinSCP |
+| MISC | — | Notion, Notepad++, WinMerge, WinSCP |
 | COMMS | Slack, Discord | Teams, Zoom |
-| MEDIA | Spotify, YouTube Music | — |
 | MAIL | — | Outlook (classic and new) |
 | OFFICE | — | Word, Excel, PowerPoint, OneNote, Visio |
 
 Teams and Zoom are seeded rather than pinned on purpose: meetings and screen-share often want the
-ultrawide, and a pinned rule would drag them back mid-call. Meeting/call popups are separately kept
+AOC in front of you, and a pinned rule would drag them back mid-call. Meeting/call popups are separately kept
 out of the tiling graph by `ignore_rules`.
 
 Matching is on executable name and is **case-sensitive** (`matching_strategy: Equals`) — there is no
@@ -73,8 +94,8 @@ use `Equals` with the on-disk casing (check with `Get-ChildItem 'C:\Program
 Files\Microsoft Office\root\Office16\*.exe'`). New Outlook is separately routed as `olk.exe`, which
 really is lower case.
 
-Monitors are pinned in `display_index_preferences` by **`device_id`**, not serial number. The ASUS
-reports its `serial_number_id` intermittently — when it comes back `null`, a serial-keyed mapping
+Monitors are pinned in `display_index_preferences` by **`device_id`**, not serial number. Some panels
+report its `serial_number_id` intermittently — when it comes back `null`, a serial-keyed mapping
 stops resolving and that monitor silently falls back to unnamed default workspaces, which breaks the
 `Alt+7`–`Alt+0` binds. `device_id` is tied to the physical port and does not have this problem.
 Check with `komorebic monitor-information` if a monitor's workspaces ever come up unnamed.
@@ -109,7 +130,7 @@ cycle that app's other windows. `raise browser` does the same thing from the she
 | `Win+C` | VS Code |
 | `Win+T` | terminal (WezTerm, else Windows Terminal) |
 | `Win+M` | Teams |
-| `Win+Y` | YouTube Music |
+| `Win+Y` | YouTube Music (docks into the side dock instead of raising — see Workspaces) |
 | `Win+E` | File Explorer |
 
 - The apps and their launch commands live in `powershell/apps.json`; add machine-specific ones to

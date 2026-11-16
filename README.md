@@ -10,7 +10,7 @@ borders, status bar, editor chrome, Spotify, launcher, context menu, and desktop
 
 | Layer | What | Config |
 | --- | --- | --- |
-| Window manager | [komorebi](https://github.com/LGUG2Z/komorebi) + whkd — 10 named workspaces, monitor-agnostic binds | `komorebi/` |
+| Window manager | [komorebi](https://github.com/LGUG2Z/komorebi) + whkd — 9 named workspaces + an always-up side dock, monitor-agnostic binds | `komorebi/` |
 | Status bar | [Yasb](https://github.com/amnweb/yasb) — two asymmetric frosted-glass bars | `yasb/` |
 | Shell | PowerShell 7, modular `profile.d/` loader, [Starship](https://starship.rs) prompt | `powershell/`, `starship.toml` |
 | Terminal | Windows Terminal (overlay-merged) + WezTerm (workspaces, shell integration) | `terminal/` |
@@ -65,8 +65,8 @@ Health check afterwards: `dotdoctor` (repo health) and `wincheck` (Windows frict
 ## Highlights
 
 - **Monitor-agnostic workspaces** — `Alt+1`–`Alt+0` focus the owning monitor first, so one keypress
-  crosses displays. Tile counts are ceilings tuned for a 5120x1440 panel; overflow workspaces use a
-  scrolling layout rather than degenerating into slivers. → [details](docs/window-manager.md#workspaces)
+  crosses displays. Tile counts are ceilings tuned per panel (2560x1440 focus, 5120x1440 side);
+  overflow workspaces use a scrolling layout rather than degenerating into slivers. → [details](docs/window-manager.md#workspaces)
 - **Raise or launch** — the Hyprland habit ported to Windows. `Win+B` focuses the browser you already
   have instead of opening a second one; press again to cycle its windows. Discovery goes through
   `komorebic state`, so it reaches windows on inactive workspaces and inside stacks that

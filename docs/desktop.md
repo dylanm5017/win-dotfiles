@@ -15,10 +15,10 @@ for how the palette reaches these surfaces.
   on the komorebi workspace buttons. komorebi reserves the bar strip via `global_work_area_offset`
   (in `komorebi/komorebi.json`) so tiled windows never sit under the bar — the bars themselves don't
   register as Windows AppBars (one reservation, not two):
-  - **Light bar** on the primary screen (`screens: ['primary']`, the Samsung ultrawide) — an ambient
-    glance: workspaces, active layout, a centered clock, media (scrolling title + album-art popup), a
+  - **Light bar** on the primary screen (`screens: ['primary']`, the AOC OLED) — auto-hides to
+    limit burn-in (hover the top edge); an ambient glance: workspaces, active layout, a centered clock, media (scrolling title + album-art popup), a
     Cava audio visualizer, volume, an on-brand active-theme indicator, and the date.
-  - **Rich bar** on the other monitor (`screens: ['*']`, the smaller ASUS detail screen) — workspaces,
+  - **Rich bar** on the other monitor (`screens: ['*']`, the Samsung ultrawide side screen) — workspaces,
     layout, komorebi control, focused window; centered clock; then weather (°F), a collapsible system
     island (CPU / memory / GPU / disk / network traffic, color-coded by load), update counts,
     notifications, a do-not-disturb toggle, a power menu, and the date.
