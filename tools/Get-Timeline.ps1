@@ -22,6 +22,13 @@
     Print a flat list instead of the graph.
 .PARAMETER Raw
     Return the events, uncollapsed, instead of printing them.
+.PARAMETER Audit
+    List things worth a look in the last 30 days (-Days changes it): repeats, failures, rising crashes, new
+    services and startup items, vanished files. -All includes ones judged harmless, -Json is for scripts.
+.PARAMETER Verdict
+    Record what an audit item (-Id) turned out to be: harmless (stays quiet unless it grows), watch or raised.
+.PARAMETER AuditDone
+    Note that an audit was completed, which quiets the monthly reminder.
 .PARAMETER Record
     Archive new events, take a snapshot and store what changed since the last one.
 .PARAMETER Register
@@ -37,6 +44,12 @@ param(
     [switch]$All,
     [switch]$Plain,
     [switch]$Raw,
+    [switch]$Audit,
+    [switch]$Json,
+    [ValidateSet('harmless', 'watch', 'raised')][string]$Verdict,
+    [string]$Id,
+    [string]$Reason,
+    [switch]$AuditDone,
     [switch]$Record,
     [switch]$Register,
     # Loads the functions without running anything, for tests.
@@ -524,6 +537,8 @@ function Save-TimelineRecord {
     Write-Output "Recorded $($added.Count) new events ($(@($added | Where-Object Kind -eq 'change').Count) changes since the last snapshot)."
 }
 
+. (Join-Path $PSScriptRoot 'timeline-audit.ps1')
+
 if ($FunctionsOnly) { return }
 
 if ($Register) {
@@ -541,6 +556,23 @@ if ($Register) {
 
 if ($Record) {
     Save-TimelineRecord
+    return
+}
+
+if ($Audit -or $Verdict -or $AuditDone) {
+    $auditDays = if ($PSBoundParameters.ContainsKey('Days')) { $Days } else { 30 }
+    if ($Verdict) {
+        try { Save-AuditVerdict -Id $Id -Verdict $Verdict -Reason $Reason -Days $auditDays } catch { Write-Error $_.Exception.Message; exit 1 }
+    }
+    elseif ($AuditDone) {
+        Write-AuditFile 'audit.json' ([PSCustomObject]@{ LastAudit = (Get-Date).ToString('o') })
+        Write-Output 'Audit noted.'
+    }
+    else {
+        $report = Get-TimelineAudit -Days $auditDays
+        if (-not $All -and $Json) { $report.Candidates = @($report.Candidates | Where-Object Status -ne 'known') }
+        if ($Json) { $report | ConvertTo-Json -Depth 5 } else { Show-TimelineAudit -Audit $report -IncludeKnown:$All }
+    }
     return
 }
 
