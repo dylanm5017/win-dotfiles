@@ -938,6 +938,7 @@ function Get-WinDotfilesCommandCatalog {
         New-WinDotfilesCommandInfo 'Verification' 'wincheck' 'Report workstation friction across shell, startup, Defender, launcher roles, comfort tools, PowerToys, Terminal, and windowing.' 'wincheck -Detailed'
         New-WinDotfilesCommandInfo 'Verification' 'winsmooth' 'Preview or apply reversible workstation tuning with backups.' 'winsmooth -Apply'
 
+        New-WinDotfilesCommandInfo 'Verification' 'timeline' 'Show what changed on this machine: boots, updates, installs, crashes, audio, drift.' "timeline -Around '11-13 06:00' -Hours 12"
         New-WinDotfilesCommandInfo 'Verification' 'audiocheck' 'Check the default outputs, XM6 level, and Wave Link state, crashes and startup.' 'audiocheck'
         New-WinDotfilesCommandInfo 'Verification' 'audiofix' 'Start Wave Link or open its window, and restore the XM6 level and default output.' 'audiofix -RestartWaveLink'
 

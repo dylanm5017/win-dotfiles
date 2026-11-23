@@ -29,6 +29,7 @@ $WinWorkstationHeadphoneVolumeScript = Join-Path $WinDotfilesRoot 'tools\Reset-H
 $WinWorkstationHeadphoneDeviceMatch = 'WH-1000XM6'
 $WinWorkstationSideDockScript = Join-Path $WinDotfilesRoot 'tools\Set-SideDock.ps1'
 $WinWorkstationAgentBoardScript = Join-Path $WinDotfilesRoot 'tools\Watch-Agents.ps1'
+$WinWorkstationTimelineScript = Join-Path $WinDotfilesRoot 'tools\Get-Timeline.ps1'
 $WinWorkstationActiveThemePath = Join-Path $WinDotfilesRoot 'themes\active.txt'
 $WinWorkstationWallpaperRoot = Join-Path $WinDotfilesRoot 'wallpapers'
 # OLED monitors get a pure black wallpaper (pixels off) instead of the theme image, so gaps never wear the panel.
@@ -1642,6 +1643,14 @@ function Set-WinWorkstationSideDockTask {
     & $WinWorkstationSideDockScript -Register
 }
 
+function Set-WinWorkstationTimelineTask {
+    param([Parameter(Mandatory)]$Manifest)
+
+    # Archives events and snapshots versions, startup items and key files for the timeline command.
+    # $Manifest is unused (a scheduled task, undone with Unregister-ScheduledTask).
+    & $WinWorkstationTimelineScript -Register
+}
+
 function Set-WinWorkstationNileSoftShellSettings {
     param([Parameter(Mandatory)]$Manifest)
 
@@ -2325,7 +2334,8 @@ function Invoke-WinWorkstationSmooth {
         [switch]$SkipShellDefaults,
         [switch]$HeadphoneVolume,
         [switch]$SkipSideDock,
-        [switch]$SkipWaveLinkDelay
+        [switch]$SkipWaveLinkDelay,
+        [switch]$SkipTimeline
     )
 
     if ($RestoreLast) {
@@ -2347,6 +2357,7 @@ function Invoke-WinWorkstationSmooth {
         'Import committed Windhawk mods (windhawk/state) when present'
         'With -HeadphoneVolume: register the task that resets the WH-1000XM6 volume to 100% (Arch dual-boot absolute volume drift)'
         'Start Wave Link from a delayed logon task instead of its own startup task (no-op if Wave Link is absent)'
+        'Register the task that records changes for the timeline command (sign-in and daily)'
         'Apply the active desktop theme: window accent color and the generated wallpaper'
         'Trim heavy login autostarts (gaming launchers, Docker, Teams/work-comms) durably, and clear the Windows Run-key startup delay so Flow is ready sooner'
         'Mark dev roots as not content indexed'
@@ -2437,6 +2448,10 @@ function Invoke-WinWorkstationSmooth {
 
         if (-not $SkipWaveLinkDelay) {
             Invoke-WinWorkstationStep -Name 'Wave Link startup' -Failures $stepFailures -Action { Set-WinWorkstationWaveLinkStartup -Manifest $manifest }
+        }
+
+        if (-not $SkipTimeline) {
+            Invoke-WinWorkstationStep -Name 'Timeline recorder' -Failures $stepFailures -Action { Set-WinWorkstationTimelineTask -Manifest $manifest }
         }
 
         if (-not $SkipDesktopTheme) {
@@ -2806,6 +2821,7 @@ Set-Alias -Name wmstart -Value Start-WinWindowManager -Force
 Set-Alias -Name wmstop -Value Stop-WinWindowManager -Force
 Set-Alias -Name wmcheck -Value Test-WinWindowManager -Force
 Set-Alias -Name agentboard -Value $WinWorkstationAgentBoardScript -Force
+Set-Alias -Name timeline -Value $WinWorkstationTimelineScript -Force
 Set-Alias -Name wmdev -Value Set-WinWindowManagerDevIntent -Force
 Set-Alias -Name wmbrowse -Value Set-WinWindowManagerBrowseIntent -Force
 Set-Alias -Name wmfocus -Value Set-WinWindowManagerFocusIntent -Force
