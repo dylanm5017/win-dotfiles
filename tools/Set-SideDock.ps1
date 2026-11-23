@@ -16,7 +16,8 @@
     work_area_offset.left, Top matches the bar reservation, and Padding (workspace padding +
     container padding + border, measured at 15px) lines the dock up with the tile edges.
 .PARAMETER Launch
-    Start any slot whose app is not running, then wait for its window.
+    Start any slot whose app is not running, then wait for its window. A watch terminal started
+    this way also gets the agent board (Watch-Agents.ps1 -Dock).
 .PARAMETER SkipLaunch
     Slots that -Launch must not start; they are still docked if already open.
 .PARAMETER Focus
@@ -149,11 +150,13 @@ $rects = @{
 }
 
 $launched = $false
+$watchStarted = $false
 foreach ($name in $slots.Keys) {
     $slot = $slots[$name]
     if (-not (Get-SlotWindow $slot) -and (($Launch -and $name -notin $SkipLaunch) -or $Focus -eq $name)) {
         & $slot.Launch
         $launched = $true
+        if ($name -eq 'watch') { $watchStarted = $true }
     }
 }
 
@@ -176,6 +179,11 @@ foreach ($name in $slots.Keys) {
     $r = $rects[$name]
     [WinDotfiles.SideDock]::Place($window, $r[0], $r[1], $r[2], $r[3])
     Write-Verbose "Docked $name ($window) at $($r[0]),$($r[1]) $($r[2])x$($r[3])."
+}
+
+# After placement, so the split is made at the terminal's final size. Needs pwsh 7; this may be running in 5.1.
+if ($watchStarted) {
+    Start-Process conhost.exe -WindowStyle Hidden -ArgumentList "--headless pwsh.exe -NoLogo -NoProfile -File `"$(Join-Path $PSScriptRoot 'Watch-Agents.ps1')`" -Dock -DockWaitSeconds 30"
 }
 
 if ($Focus) {

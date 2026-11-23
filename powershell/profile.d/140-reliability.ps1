@@ -510,7 +510,7 @@ function Test-WinDotfiles {
         'verify', 'awslambda', 'awslogs', 'fbdeploy', 'fbemu', 'stripelisten',
         'stripetrigger', 'histdoctor', 'workon', 'cmds', 'mycmds', 'gitlocks', 'gunlock',
         'projcache', 'profileperf', 'wincheck', 'winsmooth', 'wmstart', 'wmstop', 'wmcheck',
-        'wmdev', 'wmbrowse', 'wmfocus', 'wmreset', 'raise', 'apps', 'audiocheck', 'audiofix'
+        'wmdev', 'wmbrowse', 'wmfocus', 'wmreset', 'raise', 'apps', 'audiocheck', 'audiofix', 'agentboard'
     )
     $projectGroupCommands = Get-ProjectGroups | ForEach-Object Command
     $requiredProfileCommands = @($baseProfileCommands + $projectGroupCommands) | Where-Object { $_ } | Select-Object -Unique

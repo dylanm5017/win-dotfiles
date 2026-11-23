@@ -104,6 +104,10 @@ Check with `komorebic monitor-information` if a monitor's workspaces ever come u
 
 - `wmcheck` runs komorebi's config check, then reports whether komorebi/whkd run elevated and whether each
   `display_index_preferences` ID is connected with its workspaces; `wmreset` reloads `komorebi.json` and retiles.
+- `agentboard` lists the Claude Code sessions on this machine: needs you, done, or working, and for how long.
+  `agentboard -Dock` opens it as a strip at the top of the watch terminal, which the side dock does by itself
+  whenever it starts that terminal (sign-in, `Alt+8`, `wmstart`). It reads `~/.claude/sessions`, an
+  internal format, so a state it doesn't recognise shows as `unknown`; `claude agents --json` is the supported view.
 - `wmdev`, `wmbrowse`, and `wmfocus` apply common intents; `wmws <NAME>` jumps to a workspace by name.
 - `wmstart` starts `komorebi` with `whkd` using a clean state, and starts the Yasb bar alongside it.
 - `wmstop` stops `komorebi` and `whkd` (restoring hidden windows) and stops the Yasb bar.

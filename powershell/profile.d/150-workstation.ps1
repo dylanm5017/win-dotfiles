@@ -28,6 +28,7 @@ $WinWorkstationApplyNileSoftShellScript = Join-Path $WinDotfilesRoot 'tools\Appl
 $WinWorkstationHeadphoneVolumeScript = Join-Path $WinDotfilesRoot 'tools\Reset-HeadphoneVolume.ps1'
 $WinWorkstationHeadphoneDeviceMatch = 'WH-1000XM6'
 $WinWorkstationSideDockScript = Join-Path $WinDotfilesRoot 'tools\Set-SideDock.ps1'
+$WinWorkstationAgentBoardScript = Join-Path $WinDotfilesRoot 'tools\Watch-Agents.ps1'
 $WinWorkstationActiveThemePath = Join-Path $WinDotfilesRoot 'themes\active.txt'
 $WinWorkstationWallpaperRoot = Join-Path $WinDotfilesRoot 'wallpapers'
 # OLED monitors get a pure black wallpaper (pixels off) instead of the theme image, so gaps never wear the panel.
@@ -2804,6 +2805,7 @@ Set-Alias -Name profileperf -Value Invoke-WinDotfilesProfilePerf -Force
 Set-Alias -Name wmstart -Value Start-WinWindowManager -Force
 Set-Alias -Name wmstop -Value Stop-WinWindowManager -Force
 Set-Alias -Name wmcheck -Value Test-WinWindowManager -Force
+Set-Alias -Name agentboard -Value $WinWorkstationAgentBoardScript -Force
 Set-Alias -Name wmdev -Value Set-WinWindowManagerDevIntent -Force
 Set-Alias -Name wmbrowse -Value Set-WinWindowManagerBrowseIntent -Force
 Set-Alias -Name wmfocus -Value Set-WinWindowManagerFocusIntent -Force
