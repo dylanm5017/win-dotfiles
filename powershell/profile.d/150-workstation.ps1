@@ -1623,7 +1623,7 @@ function Set-WinWorkstationHeadphoneVolumeTask {
     param([Parameter(Mandatory)]$Manifest)
 
     # The XM6 shares a pairing key with the Arch dual boot, and Bluetooth absolute volume carries
-    # Arch's lower level back to Windows. Register the logon task that resets it to 100%.
+    # Arch's lower level back to Windows. Opt-in (-HeadphoneVolume) since the Arch side was fixed; resets it to 100%.
     # $Manifest is unused (a scheduled task, undone with Unregister-ScheduledTask), kept for signature consistency.
     if (-not (Get-PnpDevice -FriendlyName "*$WinWorkstationHeadphoneDeviceMatch*" -ErrorAction SilentlyContinue)) {
         Write-Host "$WinWorkstationHeadphoneDeviceMatch not paired; skipping headphone volume logon task." -ForegroundColor DarkGray
@@ -2321,7 +2321,7 @@ function Invoke-WinWorkstationSmooth {
         [switch]$SkipSearchIndexing,
         [switch]$SkipResponsiveness,
         [switch]$SkipShellDefaults,
-        [switch]$SkipHeadphoneVolume,
+        [switch]$HeadphoneVolume,
         [switch]$SkipSideDock
     )
 
@@ -2342,7 +2342,7 @@ function Invoke-WinWorkstationSmooth {
         'Theme Spotify via Spicetify from the active palette (no-op if Spicetify is absent)'
         'Theme Flow Launcher, bind it to Alt+Space, and enable its autostart (no-op if Flow is absent)'
         'Import committed Windhawk mods (windhawk/state) when present'
-        'Register the logon task that resets the WH-1000XM6 volume to 100% (Arch dual-boot absolute volume drift)'
+        'With -HeadphoneVolume: register the task that resets the WH-1000XM6 volume to 100% (Arch dual-boot absolute volume drift)'
         'Apply the active desktop theme: window accent color and the generated wallpaper'
         'Trim heavy login autostarts (gaming launchers, Docker, Teams/work-comms) durably, and clear the Windows Run-key startup delay so Flow is ready sooner'
         'Mark dev roots as not content indexed'
@@ -2423,7 +2423,7 @@ function Invoke-WinWorkstationSmooth {
             Invoke-WinWorkstationStep -Name 'Windhawk' -Failures $stepFailures -Action { Set-WinWorkstationWindhawkSettings -Manifest $manifest }
         }
 
-        if (-not $SkipHeadphoneVolume) {
+        if ($HeadphoneVolume) {
             Invoke-WinWorkstationStep -Name 'Headphone volume task' -Failures $stepFailures -Action { Set-WinWorkstationHeadphoneVolumeTask -Manifest $manifest }
         }
 

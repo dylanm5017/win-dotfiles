@@ -4,10 +4,11 @@
 .DESCRIPTION
     The WH-1000XM6 shares a pairing key with a dual-booted Arch install. Bluetooth absolute volume
     stores the level on the headphones, so turning it down on Arch carries over to Windows as a
-    lower endpoint volume. This runs at logon, polls until the endpoint is active, then resets it.
+    lower endpoint volume. This runs at logon and whenever the headphones connect, polls until the
+    endpoint is active, then resets it.
 
     Runs under Windows PowerShell 5.1: the MMDevice COM activation fails in pwsh 7
-    (REGDB_E_CLASSNOTREG). Use -Register to create the per-user logon scheduled task.
+    (REGDB_E_CLASSNOTREG). Use -Register to create the per-user scheduled task.
 #>
 [CmdletBinding()]
 param(
@@ -21,7 +22,12 @@ if ($Register) {
     $taskName = 'win-dotfiles Reset-HeadphoneVolume'
     $arguments = "--headless powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$PSCommandPath`" -DeviceMatch `"$DeviceMatch`" -Level $Level -TimeoutSeconds $TimeoutSeconds"
     $action = New-ScheduledTaskAction -Execute 'conhost.exe' -Argument $arguments
-    $trigger = New-ScheduledTaskTrigger -AtLogOn -User "$env:USERDOMAIN\$env:USERNAME"
+    $logon = New-ScheduledTaskTrigger -AtLogOn -User "$env:USERDOMAIN\$env:USERNAME"
+    # Audio/Operational event 65 fires when an endpoint changes state; NewState 1 = active (headphones connected).
+    $connect = New-CimInstance -CimClass (Get-CimClass -Namespace Root/Microsoft/Windows/TaskScheduler -ClassName MSFT_TaskEventTrigger) -ClientOnly
+    $connect.Enabled = $true
+    $connect.Subscription = "<QueryList><Query Id=`"0`" Path=`"Microsoft-Windows-Audio/Operational`"><Select Path=`"Microsoft-Windows-Audio/Operational`">*[System[EventID=65]] and *[EventData[Data[@Name='DeviceName']='$DeviceMatch'] and EventData[Data[@Name='NewState']='1']]</Select></Query></QueryList>"
+    $trigger = @($logon, $connect)
     $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Minutes 5)
     $principal = New-ScheduledTaskPrincipal -UserId "$env:USERDOMAIN\$env:USERNAME" -LogonType Interactive -RunLevel Limited
     Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Settings $settings -Principal $principal -Force | Out-Null
