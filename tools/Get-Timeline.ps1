@@ -11,7 +11,9 @@
     The history stays on this machine, under $env:WINDOTFILES_TIMELINE or the dev cache. It holds
     command lines, so keep it out of the repo.
 .PARAMETER Around
-    Centre the view on this time instead of now; -Hours sets the distance either side.
+    Centre the view on this time instead of now; -Hours sets the distance either side. The year and the date
+    are optional: '11-13 06:00', '11/13 6am', '06:00', 'yesterday 18:30' or '2026-11-13 06:00'. A date alone
+    means noon. Without a year or a date it is the most recent match.
 .PARAMETER Kind
     power, update, install, driver, service, crash, audio, security or change.
 .PARAMETER All
@@ -28,7 +30,7 @@
 [CmdletBinding()]
 param(
     [ValidateRange(1, 365)][int]$Days = 2,
-    [datetime]$Around,
+    [string]$Around,
     [ValidateRange(1, 168)][int]$Hours = 6,
     [ValidateSet('power', 'update', 'install', 'driver', 'service', 'crash', 'audio', 'security', 'change')][string[]]$Kind,
     [string]$Match,
@@ -43,6 +45,44 @@ param(
 )
 
 $taskName = 'win-dotfiles Record-Timeline'
+
+function ConvertTo-TimelineTime {
+    # [datetime] casts need a year, which is the part nobody types.
+    param([string]$Text, [datetime]$Now = (Get-Date))
+
+    $culture = [Globalization.CultureInfo]::InvariantCulture
+    $style = [Globalization.DateTimeStyles]::AllowWhiteSpaces
+    $value = [datetime]::MinValue
+    $clean = $Text.Trim().ToLowerInvariant()
+    $times = 'H:mm', 'H:mm:ss', 'h:mmtt', 'h:mm tt', 'htt', 'h tt'
+
+    $named = if ($clean -match '^(today|yesterday)\b\s*(.*)$') { $clean = $Matches[2]; if ($Matches[1] -eq 'today') { $Now.Date } else { $Now.Date.AddDays(-1) } }
+    if ($named -and -not $clean) { return $named.AddHours(12) }
+    if ([datetime]::TryParseExact($clean, [string[]]$times, $culture, $style, [ref]$value)) {
+        if ($named) { return $named + $value.TimeOfDay }
+        $today = $Now.Date + $value.TimeOfDay
+        return $(if ($today -gt $Now) { $today.AddDays(-1) } else { $today })
+    }
+    if ($named) { throw "Could not read '$Text' as a time. Try '11-13 06:00', '06:00' or 'yesterday 18:30'." }
+
+    # A leap year, so 2-29 parses; the real year is filled in below.
+    foreach ($date in 'M-d', 'M/d') {
+        foreach ($time in @('') + $times) {
+            if (-not [datetime]::TryParseExact("2000$($date[1])$clean", "yyyy$date".Insert(4, $date[1]) + $(if ($time) { " $time" }), $culture, $style, [ref]$value)) { continue }
+            if (-not $time) { $value = $value.AddHours(12) }
+            for ($year = $Now.Year; $year -gt $Now.Year - 8; $year--) {
+                if ($value.Month -eq 2 -and $value.Day -eq 29 -and -not [datetime]::IsLeapYear($year)) { continue }
+                $candidate = [datetime]::new($year, $value.Month, $value.Day).Add($value.TimeOfDay)
+                if ($candidate.Date -le $Now.Date) { return $candidate }
+            }
+        }
+    }
+    if ($clean -match '\d{4}') {
+        $parsed = [datetime]::TryParse($Text, $culture, $style, [ref]$value) -or [datetime]::TryParse($Text, [ref]$value)
+        if ($parsed) { return $(if ($clean -notmatch ':|\d\s*[ap]m') { $value.Date.AddHours(12) } else { $value }) }
+    }
+    throw "Could not read '$Text' as a time. Try '11-13 06:00', '06:00' or 'yesterday 18:30'."
+}
 
 function New-TimelineEvent {
     param([datetime]$Time, [string]$Kind, [string]$Subject, [string]$Detail, [switch]$Noise)
@@ -501,8 +541,9 @@ if ($Record) {
 $end = Get-Date
 $start = $end.AddDays(-$Days)
 if ($PSBoundParameters.ContainsKey('Around')) {
-    $start = $Around.AddHours(-$Hours)
-    $end = $Around.AddHours($Hours)
+    $center = try { ConvertTo-TimelineTime $Around } catch { Write-Host $_.Exception.Message -ForegroundColor Yellow; return }
+    $start = $center.AddHours(-$Hours)
+    $end = $center.AddHours($Hours)
 }
 
 # Read audio from further back so the first transition in view is judged against a known state.
