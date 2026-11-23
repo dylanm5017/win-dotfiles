@@ -17,6 +17,8 @@
     container padding + border, measured at 15px) lines the dock up with the tile edges.
 .PARAMETER Launch
     Start any slot whose app is not running, then wait for its window.
+.PARAMETER SkipLaunch
+    Slots that -Launch must not start; they are still docked if already open.
 .PARAMETER Focus
     Bring this slot's window to the foreground after docking (launching it first if needed).
 .PARAMETER Register
@@ -32,16 +34,17 @@ param(
     [int]$Top = 42,
     [int]$TimeoutSeconds = 30,
     [switch]$Launch,
+    [string[]]$SkipLaunch = @(),
     [ValidateSet('music', 'wavelink', 'watch')][string]$Focus,
     [switch]$Register
 )
 
 if ($Register) {
     $taskName = 'win-dotfiles Set-SideDock'
-    $arguments = "--headless powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$PSCommandPath`" -Launch -TimeoutSeconds 90"
+    $arguments = "--headless powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$PSCommandPath`" -Launch -SkipLaunch wavelink -TimeoutSeconds 90"
     $action = New-ScheduledTaskAction -Execute 'conhost.exe' -Argument $arguments
     $trigger = New-ScheduledTaskTrigger -AtLogOn -User "$env:USERDOMAIN\$env:USERNAME"
-    # Give autostarted apps (Wave Link, YouTube Music) a head start so -Launch doesn't race them.
+    # Give autostarted apps a head start so -Launch doesn't race them. Start-WaveLink.ps1 owns Wave Link.
     $trigger.Delay = 'PT20S'
     $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Minutes 5)
     $principal = New-ScheduledTaskPrincipal -UserId "$env:USERDOMAIN\$env:USERNAME" -LogonType Interactive -RunLevel Limited
@@ -148,7 +151,7 @@ $rects = @{
 $launched = $false
 foreach ($name in $slots.Keys) {
     $slot = $slots[$name]
-    if (-not (Get-SlotWindow $slot) -and ($Launch -or $Focus -eq $name)) {
+    if (-not (Get-SlotWindow $slot) -and (($Launch -and $name -notin $SkipLaunch) -or $Focus -eq $name)) {
         & $slot.Launch
         $launched = $true
     }
@@ -157,7 +160,7 @@ foreach ($name in $slots.Keys) {
 foreach ($name in $slots.Keys) {
     $slot = $slots[$name]
     $window = Get-SlotWindow $slot
-    if ($launched -and -not $window) {
+    if ($launched -and -not $window -and $name -notin $SkipLaunch) {
         $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
         while (-not $window -and (Get-Date) -lt $deadline) {
             Start-Sleep -Milliseconds 500

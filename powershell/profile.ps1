@@ -19,6 +19,7 @@ $ProfileScripts = @(
     '130-completions.ps1'
     '140-reliability.ps1'
     '150-workstation.ps1'
+    '152-audio.ps1'
     '155-raise.ps1'
     '160-projects.ps1'
     '170-greeting.ps1'

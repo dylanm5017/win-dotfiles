@@ -938,7 +938,10 @@ function Get-WinDotfilesCommandCatalog {
         New-WinDotfilesCommandInfo 'Verification' 'wincheck' 'Report workstation friction across shell, startup, Defender, launcher roles, comfort tools, PowerToys, Terminal, and windowing.' 'wincheck -Detailed'
         New-WinDotfilesCommandInfo 'Verification' 'winsmooth' 'Preview or apply reversible workstation tuning with backups.' 'winsmooth -Apply'
 
-        New-WinDotfilesCommandInfo 'Window Manager' 'wmcheck' 'Check the komorebi/whkd configuration.' 'wmcheck'
+        New-WinDotfilesCommandInfo 'Verification' 'audiocheck' 'Check the default outputs, XM6 level, and Wave Link state, crashes and startup.' 'audiocheck'
+        New-WinDotfilesCommandInfo 'Verification' 'audiofix' 'Start Wave Link or open its window, and restore the XM6 level and default output.' 'audiofix -RestartWaveLink'
+
+        New-WinDotfilesCommandInfo 'Window Manager' 'wmcheck' 'Check the komorebi/whkd configuration, elevation and monitor mapping.' 'wmcheck'
         New-WinDotfilesCommandInfo 'Window Manager' 'wmbrowse' 'Focus the browser workspace and set a clean columns layout.' 'wmbrowse'
         New-WinDotfilesCommandInfo 'Window Manager' 'wmdev' 'Focus DEV and set the ultrawide main-stack layout.' 'wmdev'
         New-WinDotfilesCommandInfo 'Window Manager' 'wmfocus' 'Toggle monocle for the focused container.' 'wmfocus'

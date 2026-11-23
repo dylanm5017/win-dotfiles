@@ -963,6 +963,7 @@ function Invoke-WinWorkstationCheck {
     $komorebiProcesses = @(Get-Process -Name komorebi, whkd -ErrorAction SilentlyContinue)
     $komorebiStatus = if ($komorebiProcesses.ProcessName -contains 'komorebi' -and $komorebiProcesses.ProcessName -contains 'whkd') { 'OK' } elseif ($komorebi) { 'Warn' } else { 'Missing' }
     [void]$results.Add((New-WinWorkstationCheckResult -Category 'Window manager' -Name 'komorebi/whkd' -Status $komorebiStatus -Detail "komorebic=$(if ($komorebi) { $komorebi.Source } else { 'not found' }); running=$($komorebiProcesses.ProcessName -join ', ')" -Recommendation 'Run winsmooth -Apply to link configs/autostart, then wmstart.'))
+    foreach ($result in @(Get-WinWindowManagerResult) + @(Get-WinAudioResult)) { [void]$results.Add($result) }
 
     $yasb = Get-Command yasbc -ErrorAction SilentlyContinue
     $yasbProcesses = @(Get-Process -Name yasb -ErrorAction SilentlyContinue)
@@ -2322,7 +2323,8 @@ function Invoke-WinWorkstationSmooth {
         [switch]$SkipResponsiveness,
         [switch]$SkipShellDefaults,
         [switch]$HeadphoneVolume,
-        [switch]$SkipSideDock
+        [switch]$SkipSideDock,
+        [switch]$SkipWaveLinkDelay
     )
 
     if ($RestoreLast) {
@@ -2343,6 +2345,7 @@ function Invoke-WinWorkstationSmooth {
         'Theme Flow Launcher, bind it to Alt+Space, and enable its autostart (no-op if Flow is absent)'
         'Import committed Windhawk mods (windhawk/state) when present'
         'With -HeadphoneVolume: register the task that resets the WH-1000XM6 volume to 100% (Arch dual-boot absolute volume drift)'
+        'Start Wave Link from a delayed logon task instead of its own startup task (no-op if Wave Link is absent)'
         'Apply the active desktop theme: window accent color and the generated wallpaper'
         'Trim heavy login autostarts (gaming launchers, Docker, Teams/work-comms) durably, and clear the Windows Run-key startup delay so Flow is ready sooner'
         'Mark dev roots as not content indexed'
@@ -2431,6 +2434,10 @@ function Invoke-WinWorkstationSmooth {
             Invoke-WinWorkstationStep -Name 'Side dock task' -Failures $stepFailures -Action { Set-WinWorkstationSideDockTask -Manifest $manifest }
         }
 
+        if (-not $SkipWaveLinkDelay) {
+            Invoke-WinWorkstationStep -Name 'Wave Link startup' -Failures $stepFailures -Action { Set-WinWorkstationWaveLinkStartup -Manifest $manifest }
+        }
+
         if (-not $SkipDesktopTheme) {
             Invoke-WinWorkstationStep -Name 'Desktop theme' -Failures $stepFailures -Action { Set-WinWorkstationDesktopTheme -Manifest $manifest }
         }
@@ -2517,6 +2524,91 @@ function Stop-WinWindowManager {
     }
 }
 
+function Get-WinProcessElevation {
+    # 'Elevated', 'Normal', or 'Denied' (the token can't be opened, which a same-user normal process always allows).
+    param([Parameter(Mandatory)][int]$Id)
+
+    if (-not ('WinDotfiles.ProcessToken' -as [type])) {
+        Add-Type -TypeDefinition @'
+using System; using System.Runtime.InteropServices;
+namespace WinDotfiles {
+public static class ProcessToken {
+    [DllImport("kernel32.dll", SetLastError = true)] static extern IntPtr OpenProcess(uint access, bool inherit, int pid);
+    [DllImport("advapi32.dll", SetLastError = true)] static extern bool OpenProcessToken(IntPtr p, uint access, out IntPtr t);
+    [DllImport("advapi32.dll", SetLastError = true)] static extern bool GetTokenInformation(IntPtr t, int cls, out int v, int size, out int len);
+    [DllImport("kernel32.dll")] static extern bool CloseHandle(IntPtr h);
+    public static string Elevation(int pid) {
+        IntPtr p = OpenProcess(0x1000, false, pid); if (p == IntPtr.Zero) return Marshal.GetLastWin32Error() == 5 ? "Denied" : "Unknown";
+        try { IntPtr t; if (!OpenProcessToken(p, 8, out t)) return Marshal.GetLastWin32Error() == 5 ? "Denied" : "Unknown";
+            try { int v, len; return GetTokenInformation(t, 20, out v, 4, out len) ? (v != 0 ? "Elevated" : "Normal") : "Unknown"; } finally { CloseHandle(t); }
+        } finally { CloseHandle(p); } } } }
+'@
+    }
+    [WinDotfiles.ProcessToken]::Elevation($Id)
+}
+
+function Compare-WinWindowManagerMonitor {
+    # Pure comparison of komorebi.json against `komorebic state`; returns one string per problem.
+    param(
+        [Parameter(Mandatory)]$Config,
+        [Parameter(Mandatory)]$State
+    )
+
+    $live = @($State.monitors.elements)
+    $claimed = @()
+    foreach ($preference in @($Config.display_index_preferences.PSObject.Properties)) {
+        $monitor = $live | Where-Object { $preference.Value -in $_.device_id, $_.serial_number_id } | Select-Object -First 1
+        if (-not $monitor) {
+            "index $($preference.Name): '$($preference.Value)' is not connected"
+            continue
+        }
+        $claimed += $monitor.device_id
+        $expected = @(@($Config.monitors)[[int]$preference.Name].workspaces.name | Where-Object { $_ })
+        $actual = @($monitor.workspaces.elements.name | Where-Object { $_ })
+        $missing = @($expected | Where-Object { $_ -notin $actual })
+        if ($missing) { "index $($preference.Name) ($($monitor.device)): missing workspaces $($missing -join ', ')" }
+    }
+    foreach ($monitor in $live) {
+        if ($monitor.device_id -notin $claimed) { "connected monitor '$($monitor.device_id)' has no display_index_preferences entry" }
+    }
+}
+
+function Get-WinWindowManagerResult {
+    $komorebic = Get-Command komorebic -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+    $processes = @(Get-Process -Name komorebi, whkd -ErrorAction SilentlyContinue)
+    if (-not $komorebic -or -not $processes) { return }
+
+    $levels = @($processes | ForEach-Object { [PSCustomObject]@{ Name = $_.ProcessName; Level = Get-WinProcessElevation -Id $_.Id } })
+    $elevated = @($levels | Where-Object { $_.Level -in 'Elevated', 'Denied' })
+    New-WinWorkstationCheckResult -Category 'Window manager' -Name 'komorebi elevation' `
+        -Status $(if ($elevated) { 'Error' } elseif ($levels.Level -contains 'Unknown') { 'Unknown' } else { 'OK' }) `
+        -Detail (($levels | ForEach-Object { "$($_.Name)=$($_.Level)" }) -join '; ') `
+        -Recommendation 'Elevated komorebi misses normal windows. From a non-admin shell: wmstop, then wmstart.'
+
+    if ($processes.ProcessName -notcontains 'komorebi') { return }
+    # A deadlocked komorebi never answers, so the query gets a deadline.
+    $stateFile = [IO.Path]::GetTempFileName()
+    $errorFile = [IO.Path]::GetTempFileName()
+    try {
+        $query = Start-Process -FilePath $komorebic.Source -ArgumentList 'state' -RedirectStandardOutput $stateFile -RedirectStandardError $errorFile -WindowStyle Hidden -PassThru
+        if (-not $query.WaitForExit(5000)) {
+            $query.Kill($true)
+            New-WinWorkstationCheckResult -Category 'Window manager' -Name 'Monitor mapping' -Status 'Error' -Detail 'komorebic state timed out; komorebi looks wedged' -Recommendation 'Run wmdiag before restarting it.'
+            return
+        }
+        $problems = @(Compare-WinWindowManagerMonitor -Config (Read-WinWorkstationJson -Path $WinWorkstationKomorebiSourcePath) -State (Read-WinWorkstationJson -Path $stateFile))
+        New-WinWorkstationCheckResult -Category 'Window manager' -Name 'Monitor mapping' -Status $(if ($problems) { 'Warn' } else { 'OK' }) `
+            -Detail $(if ($problems) { $problems -join '; ' } else { 'every display_index_preferences ID is connected with its workspaces' }) `
+            -Recommendation 'Compare komorebic monitor-information with display_index_preferences in komorebi.json, then wmreset.'
+    }
+    catch {
+        New-WinWorkstationCheckResult -Category 'Window manager' -Name 'Monitor mapping' -Status 'Unknown' -Detail $_.Exception.Message
+    }
+    finally {
+        Remove-Item -LiteralPath $stateFile, $errorFile -Force -ErrorAction SilentlyContinue
+    }
+}
+
 function Test-WinWindowManager {
     [CmdletBinding()]
     param()
@@ -2529,6 +2621,7 @@ function Test-WinWindowManager {
     Write-Host "Repo komorebi config: $WinWorkstationKomorebiSourcePath" -ForegroundColor Cyan
     Write-Host "Repo whkd config:     $WinWorkstationWhkdSourcePath" -ForegroundColor Cyan
     komorebic check
+    Get-WinWindowManagerResult | Format-Table Name, Status, Detail -AutoSize -Wrap
 }
 
 function Invoke-WinWindowManagerCommand {

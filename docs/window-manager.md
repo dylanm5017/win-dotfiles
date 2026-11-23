@@ -102,7 +102,8 @@ Check with `komorebic monitor-information` if a monitor's workspaces ever come u
 
 ## Shell and layout commands
 
-- `wmcheck` runs komorebi's config check; `wmreset` reloads `komorebi.json` and retiles.
+- `wmcheck` runs komorebi's config check, then reports whether komorebi/whkd run elevated and whether each
+  `display_index_preferences` ID is connected with its workspaces; `wmreset` reloads `komorebi.json` and retiles.
 - `wmdev`, `wmbrowse`, and `wmfocus` apply common intents; `wmws <NAME>` jumps to a workspace by name.
 - `wmstart` starts `komorebi` with `whkd` using a clean state, and starts the Yasb bar alongside it.
 - `wmstop` stops `komorebi` and `whkd` (restoring hidden windows) and stops the Yasb bar.
