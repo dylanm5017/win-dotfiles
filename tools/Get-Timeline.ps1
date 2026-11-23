@@ -16,6 +16,8 @@
     power, update, install, driver, service, crash, audio, security or change.
 .PARAMETER All
     Include routine noise (Defender definitions, virtual adapters, installer reconfigurations).
+.PARAMETER Plain
+    Print a flat list instead of the graph.
 .PARAMETER Raw
     Return the events, uncollapsed, instead of printing them.
 .PARAMETER Record
@@ -31,6 +33,7 @@ param(
     [ValidateSet('power', 'update', 'install', 'driver', 'service', 'crash', 'audio', 'security', 'change')][string[]]$Kind,
     [string]$Match,
     [switch]$All,
+    [switch]$Plain,
     [switch]$Raw,
     [switch]$Record,
     [switch]$Register,
@@ -315,11 +318,13 @@ function Join-TimelineEvent {
 
 function Group-TimelineEvent {
     # Folds repeats of the same thing within ten minutes into one row with a count. Audio folds by device,
-    # since a monitor waking flips its endpoints several times. Boots and shutdowns are never folded.
+    # since a monitor waking flips its endpoints several times. Boots and shutdowns are never folded,
+    # and nothing folds across one.
     param([object[]]$Events, [int]$WindowMinutes = 10)
     $open = @{}
     $rows = [Collections.Generic.List[object]]::new()
     foreach ($event in ($Events | Sort-Object Time)) {
+        if ($event.Kind -eq 'power') { $open = @{} }
         $key = if ($event.Kind -eq 'audio') { "audio|$($event.Subject)" } else { "$($event.Kind)|$($event.Subject)|$($event.Detail)" }
         $row = $open[$key]
         if ($row -and $event.Kind -ne 'power' -and ($event.Time - $row.Last).TotalMinutes -le $WindowMinutes) {
@@ -335,6 +340,102 @@ function Group-TimelineEvent {
         }
     }
     $rows | Sort-Object Time
+}
+
+function Format-Span([timespan]$Span) {
+    if ($Span.TotalDays -ge 1) { return '{0}d{1:00}h' -f [int][math]::Floor($Span.TotalDays), $Span.Hours }
+    if ($Span.TotalHours -ge 1) { return '{0}h{1:00}m' -f [int][math]::Floor($Span.TotalHours), $Span.Minutes }
+    if ($Span.TotalMinutes -ge 1) { return "$([int][math]::Floor($Span.TotalMinutes))m" }
+    "$([int][math]::Floor($Span.TotalSeconds))s"
+}
+
+$timelineColors = @{ power = '1;37'; update = '34'; install = '34'; driver = '35'; service = '35'; crash = '31'; audio = '36'; security = '1;31'; change = '33' }
+
+function Get-TimelineGraph {
+    # Draws the rows like git log --graph. The trunk is the machine: solid while on, dotted while off. Lane 1 is
+    # what changed, 2 is audio, 3 is what broke; a lane branches off at its first event and merges at shutdown.
+    param([object[]]$Rows, [int]$Width = 120, [switch]$Color, [switch]$Gaps, [Nullable[datetime]]$Now)
+
+    $esc = [char]27
+    $laneOf = @{ power = 0; update = 1; install = 1; driver = 1; service = 1; change = 1; audio = 2; crash = 3; security = 3 }
+    $laneCode = '1;37', '34', '36', '31'
+    $glyphs = @{ update = '▲'; install = '+'; driver = '◆'; service = '◇'; change = '∆'; audio = '●'; crash = '✗'; security = '!' }
+    function Paint([string]$Text, [string]$Code) { if ($Color) { "$esc[${Code}m$Text$esc[0m" } else { $Text } }
+
+    $open = @($false, $false, $false, $false)
+    $off = $Rows -and $Rows[0].Kind -eq 'power' -and $Rows[0].Subject -eq 'boot'
+    $day = $null
+    $last = $null
+
+    function Get-Rail([string]$Trunk, [string]$TrunkCode = '1;37', [int]$From = 1) {
+        $rail = if ($Trunk) { Paint $Trunk $TrunkCode } else { '' }
+        for ($i = $From; $i -le 3; $i++) { $rail += if ($open[$i]) { ' ' + (Paint '│' $laneCode[$i]) } else { '  ' } }
+        $rail
+    }
+
+    foreach ($row in $Rows) {
+        $trunk = if ($off) { '┊' } else { '│' }
+        $isBoot = $row.Kind -eq 'power' -and $row.Subject -eq 'boot'
+        if ($Gaps -and $last) {
+            $span = $row.Time - $last
+            $note = if ($off -and $isBoot -and $span.TotalMinutes -ge 1) { "off $(Format-Span $span)" } elseif (-not $off -and -not $isBoot -and $span.TotalHours -ge 2) { "quiet $(Format-Span $span)" }
+            if ($note) { (Get-Rail $trunk $(if ($off) { '90' } else { '1;37' })) + '  ' + (Paint $note '90') }
+        }
+        if ($row.Time.Date -ne $day) {
+            $day = $row.Time.Date
+            (Get-Rail $trunk $(if ($off) { '90' } else { '1;37' })) + '  ' + (Paint $day.ToString('ddd yyyy-MM-dd') '1')
+        }
+
+        $lane = $laneOf[$row.Kind]
+        if ($isBoot) {
+            # Lanes still open here were cut off by a shutdown that was never logged.
+            $open = @($false, $false, $false, $false)
+            $off = $false
+            $graph = Get-Rail '◉' '1;32'
+        }
+        elseif ($row.Kind -eq 'power' -and $row.Subject -eq 'shutdown') {
+            $graph = Paint '○' '1;37'
+            $end = 3
+            while ($end -gt 0 -and -not $open[$end]) { $end-- }
+            for ($i = 1; $i -le 3; $i++) {
+                $graph += if ($i -gt $end) { '  ' } else { Paint ('─' + $(if ($i -eq $end) { '╯' } elseif ($open[$i]) { '┴' } else { '─' })) $laneCode[$end] }
+            }
+            $open = @($false, $false, $false, $false)
+            $off = $true
+        }
+        elseif ($lane -eq 0) {
+            $graph = if ($row.Subject -eq 'unclean shutdown') { Get-Rail '✗' '1;31' } else { Get-Rail '◌' }
+        }
+        else {
+            # Anything logged means the machine is running, whatever the last power event said.
+            $off = $false
+            $glyph = Paint $glyphs[$row.Kind] $timelineColors[$row.Kind]
+            if ($open[$lane]) {
+                $graph = Paint '│' '1;37'
+                for ($i = 1; $i -lt $lane; $i++) { $graph += if ($open[$i]) { ' ' + (Paint '│' $laneCode[$i]) } else { '  ' } }
+                $graph += " $glyph"
+            }
+            else {
+                $graph = Paint '├' '1;37'
+                for ($i = 1; $i -lt $lane; $i++) { $graph += Paint ('─' + $(if ($open[$i]) { '┼' } else { '─' })) $laneCode[$lane] }
+                $graph += (Paint '─' $laneCode[$lane]) + $glyph
+                $open[$lane] = $true
+            }
+            $graph += Get-Rail '' '' ($lane + 1)
+        }
+
+        $text = "$($row.Subject)$(if ($row.Detail) { "  $($row.Detail)" })$(if ($row.Count -gt 1) { " x$($row.Count)" })" -replace '\p{C}', ' '
+        # 7 graph columns, then two spaces, the time, two spaces and the padded kind.
+        $room = [math]::Max(10, $Width - 28)
+        if ($text.Length -gt $room) { $text = $text.Substring(0, $room - 1) + '…' }
+        $graph + '  ' + (Paint $row.Time.ToString('HH:mm:ss') '90') + '  ' + (Paint $row.Kind.PadRight(8) $timelineColors[$row.Kind]) + ' ' + $text
+        $last = if ($row.Last -gt $row.Time) { $row.Last } else { $row.Time }
+    }
+
+    if ($Now) {
+        if ($Gaps -and $last -and ($Now - $last).TotalHours -ge 2) { (Get-Rail '│') + '  ' + (Paint "quiet $(Format-Span ($Now - $last))" '90') }
+        (Get-Rail '◎' '1;32') + '  ' + (Paint "$($Now.ToString('HH:mm:ss'))  now" '90')
+    }
 }
 
 function Save-TimelineRecord {
@@ -412,20 +513,35 @@ if ($Kind) { $events = @($events | Where-Object { $_.Kind -in $Kind }) }
 if ($Match) { $events = @($events | Where-Object { "$($_.Subject) $($_.Detail)" -match $Match }) }
 if ($Raw) { return $events }
 
-$codes = @{ power = '1;37'; update = '34'; install = '34'; driver = '35'; service = '35'; crash = '31'; audio = '36'; security = '1;31'; change = '33' }
 $width = try { [math]::Max(80, [Console]::WindowWidth - 1) } catch { 120 }
-$day = $null
-foreach ($row in Group-TimelineEvent -Events $events) {
-    if ($row.Time.Date -ne $day) {
-        $day = $row.Time.Date
-        Write-Host "`n$($day.ToString('ddd yyyy-MM-dd'))" -ForegroundColor White
+$rows = @(Group-TimelineEvent -Events $events)
+if ($Plain) {
+    $day = $null
+    foreach ($row in $rows) {
+        if ($row.Time.Date -ne $day) {
+            $day = $row.Time.Date
+            Write-Host "`n$($day.ToString('ddd yyyy-MM-dd'))" -ForegroundColor White
+        }
+        $text = "$($row.Subject)$(if ($row.Detail) { "  $($row.Detail)" })$(if ($row.Count -gt 1) { " x$($row.Count)" })" -replace '\p{C}', ' '
+        $room = $width - 20
+        if ($text.Length -gt $room) { $text = $text.Substring(0, $room - 1) + '…' }
+        Write-Host "  $($row.Time.ToString('HH:mm:ss'))  " -NoNewline -ForegroundColor DarkGray
+        Write-Host "$([char]27)[$($timelineColors[$row.Kind])m$($row.Kind.PadRight(8))$([char]27)[0m $text"
     }
-    $repeat = if ($row.Count -gt 1) { " x$($row.Count)" }
-    $text = "$($row.Subject)$(if ($row.Detail) { "  $($row.Detail)" })$repeat" -replace '\p{C}', ' '
-    $room = $width - 18
-    if ($text.Length -gt $room) { $text = $text.Substring(0, $room - 1) + '…' }
-    Write-Host "  $($row.Time.ToString('HH:mm:ss'))  " -NoNewline -ForegroundColor DarkGray
-    Write-Host "$([char]27)[$($codes[$row.Kind])m$($row.Kind.PadRight(8))$([char]27)[0m$text"
+}
+elseif ($rows) {
+    # A filtered view hides events, so its gaps would not mean the machine was quiet or off.
+    $filtered = [bool]($Kind -or $Match)
+    $graphOptions = @{ Rows = $rows; Width = $width; Color = $true; Gaps = -not $filtered }
+    if (-not $filtered -and -not $PSBoundParameters.ContainsKey('Around')) { $graphOptions.Now = $end }
+    $encoding = [Console]::OutputEncoding
+    try {
+        [Console]::OutputEncoding = [Text.Encoding]::UTF8
+        Get-TimelineGraph @graphOptions | ForEach-Object { Write-Host $_ }
+    }
+    finally {
+        [Console]::OutputEncoding = $encoding
+    }
 }
 if (-not $events) { Write-Host 'Nothing in this range.' }
 
