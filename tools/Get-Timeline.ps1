@@ -86,6 +86,12 @@ function ConvertTo-TimelineTime {
 
 function New-TimelineEvent {
     param([datetime]$Time, [string]$Kind, [string]$Subject, [string]$Detail, [switch]$Noise)
+    # The .NET SDK unpacks its daily update catalog with an MSI admin install, which Windows logs as "installed".
+    # Handled here, not where the log is read, so archived copies get the same wording and still deduplicate.
+    if ($Kind -eq 'install' -and $Subject -match '^Microsoft\.NET\.Workloads\.\d' -and $Detail -eq 'installed') {
+        $Detail = 'update catalog unpacked (nothing installed)'
+        $Noise = $true
+    }
     [PSCustomObject]@{ Time = $Time; Kind = $Kind; Subject = $Subject; Detail = $Detail; Noise = [bool]$Noise }
 }
 
