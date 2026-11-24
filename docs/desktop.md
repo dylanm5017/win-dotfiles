@@ -54,7 +54,8 @@ menus. Install it with winget (`RamenSoftware.Windhawk`, in `packages/winget.jso
   mod list in `windhawk/mods.md` (curated mods + recommended settings) plus a scripted capture/restore:
   `windhawk/Export-Windhawk.ps1` snapshots your enabled mods, per-mod settings, and sources into
   `windhawk/state/`; `windhawk/Import-Windhawk.ps1` restores them (and `winsmooth -Apply` runs the
-  import when `windhawk/state/` exists, skippable with `-SkipWindhawk`). Both self-elevate; import backs
+  import when `windhawk/state/` exists, skippable with `-SkipWindhawk`; it does nothing when the machine
+  already matches). Import also keeps Windhawk out of the Tailscale and Claude services. Both self-elevate; import backs
   up the prior state under `%LOCALAPPDATA%\win-dotfiles\windhawk-backups` first. It's best-effort —
   re-run the export after changing your mod set. `wincheck` reports whether Windhawk is installed.
 - Most mods apply to newly drawn windows, so restart Explorer (or reboot) after enabling them.

@@ -29,8 +29,12 @@ captures the mod-relevant state into `windhawk/state/` via two helper scripts (b
 - **`windhawk\Import-Windhawk.ps1`** — restores `windhawk/state/` onto a machine (sources + enable
   state + settings), backing up the current state to `%LOCALAPPDATA%\win-dotfiles\windhawk-backups`
   first, then restarting Explorer. `winsmooth -Apply` runs this automatically when `windhawk/state/`
-  exists (skip with `-SkipWindhawk`). Without captured binaries, Windhawk recompiles each mod from its
+  exists (skip with `-SkipWindhawk`). It does nothing when the machine already matches; `-Force`
+  imports anyway. Without captured binaries, Windhawk recompiles each mod from its
   source on first launch — open Windhawk once (or reboot) to let it finish.
+
+Stopping Windhawk kills some services it has injected into, so the import also adds `tailscaled.exe`
+and `cowork-svc.exe` (Claude) to Windhawk's **Process exclusion list**, keeping any other entries.
 
 > Best-effort by design: mod settings schemas can change across mod/Windhawk updates, so re-run
 > `Export-Windhawk.ps1` after you change your mod set. The curated list below is still the human-readable

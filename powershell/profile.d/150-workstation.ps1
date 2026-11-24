@@ -1686,8 +1686,9 @@ function Set-WinWorkstationWindhawkSettings {
         return
     }
 
-    # Import-Windhawk self-elevates if needed and writes its own reversible backup under %LOCALAPPDATA%.
-    Write-Host 'Importing Windhawk mods from windhawk\state (best-effort; restarts Explorer)...' -ForegroundColor Yellow
+    # Import-Windhawk does nothing when the machine already matches. Otherwise it self-elevates if needed
+    # and writes its own reversible backup under %LOCALAPPDATA%.
+    Write-Host 'Checking Windhawk against windhawk\state (an import restarts Explorer)...' -ForegroundColor Yellow
     & $WinWorkstationWindhawkImportScript
 }
 
