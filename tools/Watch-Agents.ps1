@@ -1,11 +1,13 @@
 #Requires -Version 7
 <#
 .SYNOPSIS
-    Live board of the Claude Code sessions on this machine: waiting on you, done, or working.
+    Live board of the Claude Code sessions on this machine: waiting on you, done, on a background task, or working.
 .DESCRIPTION
     Reads ~/.claude/sessions/<pid>.json, which each running session keeps current. That format is
-    internal to Claude Code (seen on 2.1.329 and 2.1.330: status is busy, idle or waiting, plus
+    internal to Claude Code (seen on 2.1.329 to 2.1.331: status is busy, idle, shell or waiting, plus
     waitingFor), so anything unrecognised shows as "unknown" instead of being guessed at.
+    "shell" is a finished turn with a background shell still running. That is either a wait the
+    session will resume from or a leftover such as a dev server; the file does not say which.
     Read-only: it never writes to the session files or talks to a session.
 
     A file only counts while its process is alive with the recorded start time, so leftovers from a
@@ -57,6 +59,7 @@ function Get-AgentSession {
         $state = switch ($session.status) {
             'waiting' { 'waiting' }
             'idle' { 'done' }
+            'shell' { 'background' }
             'busy' { 'working' }
             default { 'unknown' }
         }
@@ -97,15 +100,16 @@ function Get-BoardLine {
     $style = @{
         waiting = @{ Mark = '●'; Label = 'needs you'; Code = '1;33' }
         done    = @{ Mark = '✓'; Label = 'done'; Code = '32' }
+        background = @{ Mark = '○'; Label = 'bg task'; Code = '35' }
         working = @{ Mark = '·'; Label = 'working'; Code = '36' }
         unknown = @{ Mark = '?'; Label = 'unknown'; Code = '90' }
     }
-    $rank = @{ waiting = 0; done = 1; working = 2; unknown = 3 }
+    $rank = @{ waiting = 0; done = 1; background = 2; working = 3; unknown = 4 }
     function Paint($Text, $Code) { if ($Color) { "$esc[${Code}m$Text$esc[0m" } else { $Text } }
 
     # Oldest first while waiting (longest-blocked on top); most recent first otherwise.
     $sorted = @($Sessions | Sort-Object { $rank[$_.State] }, { $s = if ($_.Since) { $_.Since.TotalSeconds } else { 0 }; if ($_.State -eq 'waiting') { -$s } else { $s } })
-    $counts = foreach ($state in 'waiting', 'done', 'working', 'unknown') {
+    $counts = foreach ($state in 'waiting', 'done', 'background', 'working', 'unknown') {
         $n = @($sorted | Where-Object State -eq $state).Count
         if ($n) { Paint "$n $($style[$state].Label)" $style[$state].Code }
     }
