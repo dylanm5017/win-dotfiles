@@ -15,7 +15,8 @@
          Windhawk recompiles each mod from source on next launch.
       5. Start the service and restart Explorer so the mods take effect.
 
-    Stopping Windhawk kills some services it has injected into, so those are also added to its
+    Stopping Windhawk kills some services it has injected into, and its mods nearly double the start
+    time of small command-line programs, most of which have no windows to style. Both are added to its
     process exclusion list, which Windhawk reads only when it starts. If only that list needs a
     change, the mods and Explorer are left alone.
 
@@ -42,7 +43,13 @@ $programData = Join-Path $env:ProgramData 'Windhawk'
 $pdModsSource = Join-Path $programData 'ModsSource'
 $engineMods = Join-Path $programData 'Engine\Mods'
 $engineSettings = 'HKLM:\SOFTWARE\Windhawk\Engine\Settings'
-$excludedProcesses = 'tailscaled.exe', 'cowork-svc.exe'
+$excludedProcesses = @(
+    'tailscaled.exe', 'tailscale-ipn.exe', 'cowork-svc.exe'
+    'bash.exe', 'sh.exe', 'cmd.exe', 'pwsh.exe', 'powershell.exe', 'conhost.exe', 'OpenConsole.exe'
+    'git.exe', 'git-remote-https.exe', 'gh.exe', 'ssh.exe', 'rg.exe', 'fd.exe', 'jq.exe'
+    'node.exe', 'esbuild.exe', 'dotnet.exe', 'MSBuild.exe', 'VBCSCompiler.exe'
+    '*\Git\usr\bin\*'
+)
 
 if (-not (Test-Path -LiteralPath (Join-Path $stateRoot 'manifest.json'))) {
     Write-Warning "No captured Windhawk state at $stateRoot. Run Export-Windhawk.ps1 first."

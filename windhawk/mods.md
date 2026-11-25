@@ -33,8 +33,13 @@ captures the mod-relevant state into `windhawk/state/` via two helper scripts (b
   imports anyway. Without captured binaries, Windhawk recompiles each mod from its
   source on first launch — open Windhawk once (or reboot) to let it finish.
 
-Stopping Windhawk kills some services it has injected into, so the import also adds `tailscaled.exe`
-and `cowork-svc.exe` (Claude) to Windhawk's **Process exclusion list**, keeping any other entries.
+Stopping Windhawk kills some processes it has injected into, so the import also adds `tailscaled.exe`,
+`tailscale-ipn.exe` (the tray app, without which Tailscale goes offline) and `cowork-svc.exe` (Claude)
+to Windhawk's **Process exclusion list**, keeping any other entries.
+It adds shells and command-line tools (`bash`, `git`, `node`, `dotnet`, ...) too: five mods load into
+nearly every process, which took a small program from about 17 ms to 32 ms to start. `claude.exe` and
+`python.exe` stay off the list, since programs with those names can have windows. An app started from an
+excluded shell gets its mods about a second late.
 
 > Best-effort by design: mod settings schemas can change across mod/Windhawk updates, so re-run
 > `Export-Windhawk.ps1` after you change your mod set. The curated list below is still the human-readable
